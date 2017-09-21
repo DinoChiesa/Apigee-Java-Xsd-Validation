@@ -4,16 +4,12 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
-
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.IOUtils;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -42,7 +38,6 @@ public class TestXsdCallout {
     private final static String testDataDir = "src/test/resources/test-data";
 
     MessageContext msgCtxt;
-    //String messageContent;
     InputStream messageContentStream;
     Message message;
     ExecutionContext exeCtxt;
@@ -112,7 +107,7 @@ public class TestXsdCallout {
         // each inner Object[] must have length 1.
 
         ObjectMapper om = new ObjectMapper();
-        om.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        om.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, true);
 
         // Path currentRelativePath = Paths.get("");
         // String s = currentRelativePath.toAbsolutePath().toString();
@@ -189,14 +184,11 @@ public class TestXsdCallout {
         messageContentStream = getInputStream(tc);
 
         XsdValidatorCallout callout = new XsdValidatorCallout(tc.getProperties());
-
-        // execute and retrieve output
         ExecutionResult actualResult = callout.execute(msgCtxt, exeCtxt);
-
         String s = tc.getExpected().get("success").toString();
         ExecutionResult expectedResult = (s!=null && s.toLowerCase().equals("true")) ?
                                            ExecutionResult.SUCCESS : ExecutionResult.ABORT;
-        // check result and output
+
         if (expectedResult == actualResult) {
             if (expectedResult == ExecutionResult.SUCCESS) {
                 Object o = tc.getExpected().get("valid");
