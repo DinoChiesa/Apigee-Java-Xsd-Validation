@@ -45,14 +45,9 @@ import com.apigee.flow.execution.IOIntensive;
 import com.apigee.flow.execution.spi.Execution;
 import com.apigee.flow.message.Message;
 import com.apigee.flow.message.MessageContext;
-
-import com.google.common.base.Predicate;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Maps;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -60,6 +55,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -79,7 +75,6 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 
 @IOIntensive
 public class XsdValidatorCallout implements Execution {
-    // The default cap on the number of "sleeping" instances in the pool.
     private static final String varPrefix = "xsd_";
     private static final String variableReferencePatternString = "(.*?)\\{([^\\{\\}]+?)\\}(.*?)";
     private final static Pattern variableReferencePattern = Pattern.compile(variableReferencePatternString);
@@ -100,7 +95,7 @@ public class XsdValidatorCallout implements Execution {
                 m.put((String) key, (String) value);
             }
         }
-        this.properties = m;
+        this.properties = Collections.unmodifiableMap(m);
 
         fileResourceCache = CacheBuilder.newBuilder()
             .concurrencyLevel(4)
@@ -172,7 +167,7 @@ public class XsdValidatorCallout implements Execution {
         Source source = null;
         Object in = msgCtxt.getVariable(sourceProp);
         if (in == null) {
-            throw new IllegalStateException("source is not specified");
+            throw new IllegalStateException(String.format("source '%s' is empty", sourceProp));
         }
         if (in instanceof com.apigee.flow.message.Message) {
             Message msg = (Message) in;
@@ -183,9 +178,9 @@ public class XsdValidatorCallout implements Execution {
             String s = (String) in;
             s = s.trim();
             if (!s.startsWith("<")) {
-                throw new IllegalStateException("source does not appear to be XML");
+                throw new IllegalStateException(String.format("source '%s' does not appear to be XML", sourceProp));
             }
-            InputStream s2 = IOUtils.toInputStream((String)s, "UTF-8");
+            InputStream s2 = IOUtils.toInputStream(s, "UTF-8");
             source = new StreamSource(s2);
         }
         return source;
@@ -228,7 +223,6 @@ public class XsdValidatorCallout implements Execution {
     }
 
     private static InputStream getResourceAsStream(String resourceName) throws IOException {
-        // forcibly prepend a slash
         if (!resourceName.startsWith("/")) {
             resourceName = "/" + resourceName;
         }
@@ -249,7 +243,6 @@ public class XsdValidatorCallout implements Execution {
         }
         return ref;
     }
-
 
     public ExecutionResult execute(MessageContext msgCtxt, ExecutionContext exeCtxt) {
         ExecutionResult calloutResult = ExecutionResult.ABORT;
