@@ -1,0 +1,13 @@
+{
+  "context" : {
+    "myxsd" : "this-is0not-valid-xsd"
+  },
+  "properties" : {
+    "debug" : "false",
+    "xsd" : "{myxsd}"
+  },
+  "expected" : {
+    "success" : false,
+    "error" : "Content is not allowed in prolog."
+  }
+}

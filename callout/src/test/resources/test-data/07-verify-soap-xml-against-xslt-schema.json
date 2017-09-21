@@ -1,0 +1,15 @@
+{
+  "context" : {
+    "myxsd" : "file://schema-for-xslt20.xsd",
+    "inputVar" : "file://Sample-Soap.xml"
+  },
+  "properties" : {
+    "debug" : true,
+    "source" : "inputVar",
+    "xsd" : "{myxsd}"
+  },
+  "expected" : {
+    "success" : true,
+    "valid" : false
+  }
+}

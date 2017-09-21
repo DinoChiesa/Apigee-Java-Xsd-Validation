@@ -1,0 +1,13 @@
+{
+  "context" : {
+    "myxsd" : ""
+  },
+  "properties" : {
+    "debug" : "false",
+    "xsd" : "{myxsd}"
+  },
+  "expected" : {
+    "success" : "false",
+    "error" : "configuration error: xsd resolves to null or empty"
+  }
+}

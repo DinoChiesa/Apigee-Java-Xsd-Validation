@@ -1,0 +1,15 @@
+{
+  "context" : {
+    "myxsd" : "file://schema-for-xslt20.xsd",
+    "inputVar" : "file://ReOrderNodes.xsl"
+  },
+  "properties" : {
+    "debug" : false,
+    "source" : "inputVar",
+    "xsd" : "{myxsd}"
+  },
+  "expected" : {
+    "success" : true,
+    "valid" : true
+  }
+}

@@ -1,0 +1,11 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+ <soap:Header>
+  </soap:Header>
+  <soap:Body>
+    <OperationName>
+      <ElementZ/>
+      <ElementY/>
+      <ElementX/>
+    </OperationName>
+  </soap:Body>
+</soap:Envelope>
