@@ -16,7 +16,11 @@ All you need is the built JAR, and the appropriate configuration for the policy.
 If you want to build it, feel free.  The instructions are at the bottom of this readme.
 
 
-1. copy the jar file, available in  target/edge-custom-xsd-validation-1.0.1.jar , if you have built the jar, or in [the repo](bundle/apiproxy/resources/java/edge-custom-xsd-validation-1.0.1.jar) if you have not, to your apiproxy/resources/java directory. Also copy all the required dependencies. (See below) You can do this offline, or using the graphical Proxy Editor in the Apigee Edge Admin Portal.
+1. copy the jar file, available in target/edge-custom-xsd-validation-1.0.1.jar , if you have built
+   the jar, or in [the repo](bundle/apiproxy/resources/java/edge-custom-xsd-validation-1.0.1.jar)
+   if you have not, to your apiproxy/resources/java directory. Also copy all the required
+   dependencies. (See below) You can do this offline, or using the graphical Proxy Editor in the
+   Apigee Edge Admin Portal.
 
 2. include a Java callout policy in your
    apiproxy/resources/policies directory. It should look
@@ -32,11 +36,12 @@ If you want to build it, feel free.  The instructions are at the bottom of this 
     </JavaCallout>
    ```
 
-5. use the Edge UI, or a command-line tool like pushapi (See
-   https://github.com/carloseberhardt/apiploy) or similar to
-   import the proxy into an Edge organization, and then deploy the proxy .
+5. use the Edge UI, or a command-line tool like
+   [pushapi](https://github.com/carloseberhardt/apiploy) or
+   [importAndDeploy.js](https://github.com/DinoChiesa/apigee-edge-js/blob/master/examples/importAndDeploy.js)
+   or similar to import the proxy into an Edge organization, and then deploy the proxy.
 
-6. use a client to generate and send http requests to tickle the proxy.
+6. use a client (like curl, or Postman, or Powershell's Invoke-WebRequest) to generate and send http requests to tickle the proxy.
 
 
 
@@ -68,12 +73,11 @@ The xsd property specifies the schema. This can be one of 4 forms:
 
 * a file reference, like file://filename.xsd
 * a url beginning with http:// or https://
-* a string that begins with <xsd:schema and ends with /xsd:schema>. In other words, you can directly embed the XSD into the configuration for the policy.
-* a variable enclosed in curly-braces that resolves to one of the above.
+* a UTF-8 string that, when trimmed, defines an XML Schema. (It begins with <schema> and ends with </schema>) In other words, you can directly embed the XSD into the configuration for the policy.
+* a string enclosed in curly-braces, indicating a variable which resolves to one of the above.
 
-If a filename, the file must be present as a resource in the JAR file.
-This requires you to re-package the jar file. The structure of the jar
-must be like so:
+If a filename, the file must be present as a resource in the JAR file. This requires you to
+re-package the jar file. The structure of the jar must be like so:
 
 ```
 meta-inf/
@@ -90,15 +94,20 @@ resources/filename.xsd
 
 You can have as many XSDs in the resources directory as you like.
 
-If a URL, the URL must return a valid XSD. The URL should be accessible
-from the message processor. The contents of the URL will be cached, currently for 10 minutes. This cache period is not confgurable, but you could change it in the source and re-compile if you like. 
+If a URL, the URL must return a valid XSD. The URL should be accessible from the message
+processor. The contents of the URL will be cached, currently for 10 minutes. This cache period is
+not confgurable, but you could change it in the source and re-compile if you like.
 
-The source property specifies where to find the XML to be validated. This must be a variable name.  Do not use curly-braces. If
-this variable resolves to a Message, then the callout will validate
-Message.content.
+The source property specifies where to find the XML to be validated. This must be a variable name.
+Do not use curly-braces. If this variable resolves to a Message type (such as request or response,
+or a message created using AssignMessage, or a response obtained from a ServiceCallout), then the
+callout will validate the content of that Message variable. If no source is specified, then the
+policy will default to using the value of context variable 'message.content' for the source.
 
-The result of the policy is to set a variable "xsd_valid".
-It will hold "true" if valid; "false" if not.
+The policy does not have the capability to retrieve the source XML from a URL, or from a file.
+
+The policy sets the result of the validation check into a variable "xsd_valid".
+It will hold "true" if the document is valid against the schema; "false" if not. If the XML is not well-formed, then the value will get "false".
 
 
 
@@ -138,8 +147,16 @@ This material is Copyright 2017, Google Inc.
 and is licensed under the [Apache 2.0 License](LICENSE). This includes the Java code as well as the API Proxy configuration.
 
 
+## Support
+
+This callout is open-source software, and is not a supported part of Apigee Edge.
+If you need assistance, you can try inquiring on
+[The Apigee Community Site](https://community.apigee.com).  There is no service-level
+guarantee for responses to inquiries regarding this callout.
+
 
 ## Bugs
 
 * The tests are incomplete.
 * There is no sample API Proxy bundle.
+* Instances of the SchemaFactory are not pooled
