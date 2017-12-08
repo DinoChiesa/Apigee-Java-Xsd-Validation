@@ -9,6 +9,11 @@ does this; this callout is different in that it is a bit more flexible.
 * It is possible to specify an XSD source available at an HTTP endpoint
 
 
+## Disclaimer
+
+This example is not an official Google product, nor is it part of an official Google product.
+
+
 ## Using this policy
 
 You do not need to build the source code in order to use the policy in Apigee Edge.
@@ -113,7 +118,7 @@ It will hold "true" if the document is valid against the schema; "false" if not.
 
 ## Building
 
-Building from source requires Java 1.7, and Maven.
+Building from source requires Java 1.8, and Maven.
 
 1. unpack (if you can read this, you've already done that).
 
