@@ -1,0 +1,17 @@
+{
+  "context" : {
+    "myxsd" : "file://schema-for-purchase-order.xsd",
+    "inputVar" : "file://purchase-order-not-wellformed.xml"
+  },
+  "properties" : {
+    "debug" : false,
+    "source" : "inputVar",
+    "xsd" : "{myxsd}"
+  },
+  "expected" : {
+    "success" : false,
+    "valid" : false,
+    "error" : "org.xml.sax.SAXParseException; lineNumber: 10; columnNumber: 10; The value of attribute \"country\" associated with an element type \"billTo\" must not contain the '<' character.",
+    "exceptionCount" : 2
+  }
+}

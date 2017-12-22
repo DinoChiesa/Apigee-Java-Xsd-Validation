@@ -10,6 +10,7 @@
   },
   "expected" : {
     "success" : true,
-    "valid" : false
+    "valid" : false,
+    "exceptionCount" : 1
   }
 }

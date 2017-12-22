@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -130,6 +131,7 @@ public class TestXsdCallout {
         if (files.length == 0) {
             throw new IllegalStateException("no tests found.");
         }
+        Arrays.sort(files);
         int c=0;
         ArrayList<TestCase> list = new ArrayList<TestCase>();
         for (File file : files) {
@@ -175,9 +177,9 @@ public class TestXsdCallout {
     @Test(dataProvider = "batch1")
     public void test2_Configs(TestCase tc) throws Exception {
         if (tc.getDescription()!= null)
-            System.out.printf("  %10s - %s\n", tc.getTestName(), tc.getDescription() );
+            System.out.printf("  %-40s - %s\n", tc.getTestName(), tc.getDescription() );
         else
-            System.out.printf("  %10s\n", tc.getTestName() );
+            System.out.printf("  %-40s\n", tc.getTestName() );
 
         // set variables into message context
         for (Map.Entry<String, String> entry : tc.getContext().entrySet()) {
@@ -197,6 +199,10 @@ public class TestXsdCallout {
         ExecutionResult expectedResult = (s!=null && s.toLowerCase().equals("true")) ?
                                            ExecutionResult.SUCCESS : ExecutionResult.ABORT;
 
+        String messages = msgCtxt.getVariable("xsd_validation_exceptions");
+        if (messages != null) {
+            System.out.printf("\n  ** Generated Exceptions during Validation:\n%s\n", messages);
+        }
         if (expectedResult == actualResult) {
             if (expectedResult == ExecutionResult.SUCCESS) {
                 Object o = tc.getExpected().get("valid");
@@ -220,6 +226,14 @@ public class TestXsdCallout {
                 String actualError = msgCtxt.getVariable("xsd_error");
                 Assert.assertTrue(actualError.endsWith(expectedError), tc.getTestName() + ": error not as expected (" + actualError + ")");
             }
+            if (messages != null) {
+                int lines = countLines(messages);
+                Object o = tc.getExpected().get("exceptionCount");
+                if (o!= null) {
+                    int expectedExceptionCount = (int) o;
+                    Assert.assertEquals(lines, expectedExceptionCount, tc.getTestName() + ": exception count");
+                }
+            }
         }
         else {
             String observedError = msgCtxt.getVariable("xsd_error");
@@ -229,4 +243,14 @@ public class TestXsdCallout {
         System.out.println("=========================================================");
     }
 
+    public static int countLines(String str) {
+        if(str == null || str.isEmpty())
+            return 0;
+        int lines = 1;
+        int pos = 0;
+        while ((pos = str.indexOf("\n", pos) + 1) != 0) {
+            lines++;
+        }
+        return lines;
+    }
 }

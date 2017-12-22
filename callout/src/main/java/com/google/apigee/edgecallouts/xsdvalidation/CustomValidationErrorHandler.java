@@ -14,17 +14,22 @@
 //
 package com.google.apigee.edgecallouts.xsdvalidation;
 
+import com.apigee.flow.message.MessageContext;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXParseException;
-import com.apigee.flow.message.MessageContext;
 
 public class CustomValidationErrorHandler implements ErrorHandler {
-
+    private final static int RECORDED_EXCEPTION_LIMIT = 10;
     private final static String _prefix = "xsd_";
     MessageContext _msgCtxt;
     int _warnCount;
     int _errorCount;
     boolean _debug = false;
+    List<String> exceptionList;
     private static String varName(String s) {
         return _prefix + s;
     }
@@ -47,6 +52,7 @@ public class CustomValidationErrorHandler implements ErrorHandler {
             exception.printStackTrace();
         }
         _msgCtxt.setVariable(varName("error_" + _errorCount), "Error:" + exception.toString());
+        addException(exception);
     }
     public void fatalError(SAXParseException exception) {
         _errorCount++;
@@ -55,6 +61,7 @@ public class CustomValidationErrorHandler implements ErrorHandler {
             exception.printStackTrace();
         }
         _msgCtxt.setVariable(varName("error_" + _errorCount), "Fatal Error:" + exception.toString());
+        addException(exception);
     }
 
     public void warning(SAXParseException exception) {
@@ -64,6 +71,14 @@ public class CustomValidationErrorHandler implements ErrorHandler {
             exception.printStackTrace();
         }
         _msgCtxt.setVariable(varName("warning_" + _warnCount), "Warning:" + exception.toString());
+        addException(exception);
+    }
+
+    private void addException(SAXParseException ex) {
+        if (this.exceptionList == null)
+            this.exceptionList = new ArrayList<>(); // lazy create
+        if (exceptionList.size() < RECORDED_EXCEPTION_LIMIT)
+            this.exceptionList.add(ex.toString());
     }
 
     public boolean isValid() {
@@ -72,5 +87,18 @@ public class CustomValidationErrorHandler implements ErrorHandler {
 
     public int getErrorCount() {
         return this._errorCount;
+    }
+
+    public String getConsolidatedExceptionMessage() {
+        if (this.exceptionList == null) return null;
+        LineCounter lc = new LineCounter();
+        return (String) exceptionList.stream().map(lc::toIndexed).collect(Collectors.joining("\n"));
+    }
+
+    static class LineCounter {
+        int n = 1;
+        public String toIndexed(String line) {
+            return (n++) + ". " + line ;
+        }
     }
 }

@@ -260,13 +260,14 @@ public class XsdValidatorCallout implements Execution {
 
     public ExecutionResult execute(MessageContext msgCtxt, ExecutionContext exeCtxt) {
         ExecutionResult calloutResult = ExecutionResult.ABORT;
+        CustomValidationErrorHandler errorHandler = null;
         boolean debug = getDebug();
         try {
             SchemaFactory notThreadSafeFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
             String xsd = getXsd(msgCtxt);
             Schema schema = notThreadSafeFactory.newSchema(new StreamSource(new StringReader(xsd)));
             Validator validator = schema.newValidator();
-            CustomValidationErrorHandler errorHandler = new CustomValidationErrorHandler(msgCtxt, debug);
+            errorHandler = new CustomValidationErrorHandler(msgCtxt, debug);
             validator.setErrorHandler(errorHandler);
             Source source = getSource(msgCtxt);
             validator.validate(source);
@@ -279,9 +280,17 @@ public class XsdValidatorCallout implements Execution {
                 //System.out.println(stacktrace);  // to MP stdout
                 msgCtxt.setVariable(varName("stacktrace"), stacktrace);
             }
-            String error = error = e.toString();
+            String error = e.toString();
             msgCtxt.setVariable(varName("exception"), error);
             msgCtxt.setVariable(varName("error"), error);
+        }
+        finally {
+            if (errorHandler != null) {
+                String consolidatedExceptionMessage = errorHandler.getConsolidatedExceptionMessage();
+                if (consolidatedExceptionMessage != null) {
+                    msgCtxt.setVariable(varName("validation_exceptions"), consolidatedExceptionMessage);
+                }
+            }
         }
         return calloutResult;
     }
