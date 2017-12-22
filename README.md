@@ -81,7 +81,7 @@ The xsd property specifies the schema. This can be one of 4 forms:
 * a UTF-8 string that, when trimmed, defines an XML Schema. (It begins with <schema> and ends with </schema>) In other words, you can directly embed the XSD into the configuration for the policy.
 * a string enclosed in curly-braces, indicating a variable which resolves to one of the above.
 
-Note: you cannot specify an XSD which is uploaded as a resource to the proxy, or the environment, or the organization. You cannot use an xsd:// url. 
+Note: you cannot specify an XSD which is uploaded as a resource to the proxy, or the environment, or the organization. You cannot use an xsd:// url.
 
 
 If a filename, the file must be present as a resource in the JAR file. This requires you to
@@ -121,8 +121,16 @@ You can also read these variables:
 
 * xsd_validation_exceptions : a string, containing a list of 1 or more messages, each separated by a newline, indicating what makes the document invalid. If the document his valid, this variable will be null. This could be suitable for sending back to the caller.
 * xsd_error : set if the policy failed. This is usually the result of a configuration error. Processing an invalid document will not be a failure. The policy succeeds though the document is deemed invalid.
-* xsd_exception : a diagnostic message indicating what caused the policy to fail at runtime.
+* xsd_exception : a diagnostic message indicating what caused the policy to fail at runtime. Set only if xsd_error is set.
 
+Here's an example of the list of messages emitted in xsd_validation_exceptions when a not-well-formed XML document is validated against a schema for "puchaseOrder":
+
+```
+1. org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 83; cvc-elt.1: Cannot find the declaration of element 'purchaseOrder'.
+2. org.xml.sax.SAXParseException; lineNumber: 10; columnNumber: 10; The value of attribute "country" associated with an element type "billTo" must not contain the '<' character.
+```
+
+The list of messages is limited to 10. 
 
 
 ## Building
