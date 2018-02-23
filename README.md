@@ -78,7 +78,7 @@ The xsd property specifies the schema. This can be one of 4 forms:
 
 * a file reference, like file://filename.xsd
 * a url beginning with http:// or https://
-* a UTF-8 string that, when trimmed, defines an XML Schema. (It begins with <schema> and ends with </schema>) In other words, you can directly embed the XSD into the configuration for the policy.
+* a UTF-8 string that, when trimmed, defines an XML Schema. (It begins with `<schema>` and ends with `</schema>`) In other words, you can directly embed the XSD into the configuration for the policy.
 * a string enclosed in curly-braces, indicating a variable which resolves to one of the above.
 
 Note: you cannot specify an XSD which is uploaded as a resource to the proxy, or the environment, or the organization. You cannot use an xsd:// url.
@@ -112,16 +112,18 @@ or a message created using AssignMessage, or a response obtained from a ServiceC
 callout will validate the content of that Message variable. If no source is specified, then the
 policy will default to using the value of context variable 'message.content' for the source.
 
-The policy does not have the capability to retrieve the source XML from a URL, or from a file.
+The policy does not have the capability to retrieve the source XML from a URL, or from a file. In most cases the source XML will be a request or response.
 
-The policy sets the result of the validation check into a variable "xsd_valid".
-It will hold "true" if the document is valid against the schema; "false" if not. If the XML is not well-formed, then the value will get "false".
 
-You can also read these variables:
+The policy sets these context variables as output:
 
-* xsd_validation_exceptions : a string, containing a list of 1 or more messages, each separated by a newline, indicating what makes the document invalid. If the document his valid, this variable will be null. This could be suitable for sending back to the caller.
-* xsd_error : set if the policy failed. This is usually the result of a configuration error. Processing an invalid document will not be a failure. The policy succeeds though the document is deemed invalid.
-* xsd_exception : a diagnostic message indicating what caused the policy to fail at runtime. Set only if xsd_error is set.
+| variable name           | description        |
+------------------------- | ------------------ |
+| xsd_valid               |  result of the validation check. It will hold "true" if the document is valid against the schema; "false" if not. If the XML is not well-formed, then the value will get "false".
+| xsd_validation_exception| a string, containing a list of 1 or more messages, each separated by a newline, indicating what makes the document invalid. If the document his valid, this variable will be null. This could be suitable for sending back to the caller.
+| xsd_error               | set if the policy failed. This is usually the result of a configuration error. Processing an invalid document will not be a failure. The policy succeeds though the document is deemed invalid.
+| xsd_exception           | a diagnostic message indicating what caused the policy to fail at runtime. Set only if xsd_error is set.
+
 
 Here's an example of the list of messages emitted in xsd_validation_exceptions when a not-well-formed XML document is validated against a schema for "puchaseOrder":
 
@@ -130,7 +132,7 @@ Here's an example of the list of messages emitted in xsd_validation_exceptions w
 2. org.xml.sax.SAXParseException; lineNumber: 10; columnNumber: 10; The value of attribute "country" associated with an element type "billTo" must not contain the '<' character.
 ```
 
-The list of messages is limited to 10. 
+The list of messages is limited to 10.
 
 
 ## Building
@@ -179,6 +181,7 @@ guarantee for responses to inquiries regarding this callout.
 
 ## Bugs
 
-* The tests are incomplete.
+* The tests are incomplete. For example, there are no tests resolving schema that include other schema.
 * There is no sample API Proxy bundle.
-* Instances of the SchemaFactory are not pooled
+* Instances of the SchemaFactory are not pooled - this might improve perf at load, not sure.
+
