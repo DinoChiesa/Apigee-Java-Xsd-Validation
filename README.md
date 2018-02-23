@@ -21,8 +21,8 @@ All you need is the built JAR, and the appropriate configuration for the policy.
 If you want to build it, feel free.  The instructions are at the bottom of this readme.
 
 
-1. copy the jar file, available in target/edge-custom-xsd-validation-1.0.2.jar , if you have built
-   the jar, or in [the repo](bundle/apiproxy/resources/java/edge-custom-xsd-validation-1.0.2.jar)
+1. copy the jar file, available in target/edge-custom-xsd-validation-1.0.3.jar , if you have built
+   the jar, or in [the repo](bundle/apiproxy/resources/java/edge-custom-xsd-validation-1.0.3.jar)
    if you have not, to your apiproxy/resources/java directory. Also copy all the required
    dependencies. (See below) You can do this offline, or using the graphical Proxy Editor in the
    Apigee Edge Admin Portal.
@@ -37,7 +37,7 @@ If you want to build it, feel free.  The instructions are at the bottom of this 
            ....
       </Properties>
       <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-      <ResourceURL>java://edge-custom-xsd-validation-1.0.2.jar</ResourceURL>
+      <ResourceURL>java://edge-custom-xsd-validation-1.0.3.jar</ResourceURL>
     </JavaCallout>
    ```
 
@@ -70,7 +70,7 @@ To use this callout, you will need an API Proxy, of course.
      <Property name='source'>request</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://edge-custom-xsd-validation-1.0.2.jar</ResourceURL>
+  <ResourceURL>java://edge-custom-xsd-validation-1.0.3.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -105,6 +105,25 @@ You can have as many XSDs in the resources directory as you like.
 If a URL, the URL must return a valid XSD. The URL should be accessible from the message
 processor. The contents of the URL will be cached, currently for 10 minutes. This cache period is
 not confgurable, but you could change it in the source and re-compile if you like.
+
+
+In the case that you have multiple XSDs, in which one XSD imports another, then you need to specify all of them explicitly.
+Specify them in the xsd property, separated by commas, like this:
+
+```xml
+<JavaCallout name='JavaCallout-Xslt-1'>
+  <Properties>
+     <Property name='xsd'>{xsdurl1},{xsdurl2},https://foo/bar/bam/schemaurl.xsd</Property>
+     <Property name='source'>request</Property>
+  </Properties>
+  <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
+  <ResourceURL>java://edge-custom-xsd-validation-1.0.3.jar</ResourceURL>
+</JavaCallout>
+```
+
+The order in which these are specified is important.
+If A imports B, then you must  specify B before A in the comma-separated list.
+
 
 The source property specifies where to find the XML to be validated. This must be a variable name.
 Do not use curly-braces. If this variable resolves to a Message type (such as request or response,
@@ -181,7 +200,7 @@ guarantee for responses to inquiries regarding this callout.
 
 ## Bugs
 
-* The tests are incomplete. For example, there are no tests resolving schema that include other schema.
+* The tests are incomplete. For example, there are no tests involving schema that include other schema.
 * There is no sample API Proxy bundle.
 * Instances of the SchemaFactory are not pooled - this might improve perf at load, not sure.
 

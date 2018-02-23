@@ -200,40 +200,57 @@ public class XsdValidatorCallout implements Execution {
         return source;
     }
 
-    private String getXsd(MessageContext msgCtxt)
+    private StreamSource[] getXsd(MessageContext msgCtxt)
         throws IllegalStateException, IOException, ExecutionException {
-        String xsd = (String) this.properties.get("xsd");
+        String xsdValue = (String) this.properties.get("xsd");
         Source source = null;
-        if (xsd == null) {
+        if (xsdValue == null) {
             throw new IllegalStateException("configuration error: no xsd property");
         }
-        if (xsd.equals("")) {
+        if (xsdValue.equals("")) {
             throw new IllegalStateException("configuration error: xsd property is empty");
         }
-        xsd = resolvePropertyValue(xsd, msgCtxt);
-        if (xsd == null || xsd.equals("")) {
+        xsdValue = resolvePropertyValue(xsdValue, msgCtxt);
+        if (xsdValue == null || xsdValue.equals("")) {
             throw new IllegalStateException("configuration error: xsd resolves to null or empty");
         }
-        xsd = xsd.trim();
-        xsd = maybeResolveUrlReference(xsd);
-        return xsd;
-    }
 
+        xsdValue = xsdValue.trim();
+        StreamSource[] sources;
+        if (xsdValue.startsWith("<")) {
+            sources = new StreamSource[1];
+            sources[0] = new StreamSource(new StringReader(maybeResolveUrlReference(xsdValue)));
+        }
+        else {
+            String[] parts = xsdValue.split(",");
+            //System.out.printf("\n** found %d xsds\n", parts.length);
+            sources = new StreamSource[parts.length];
+            for (int i=0; i < parts.length; i++) {
+                //System.out.printf("** part[%d] = '%s'\n", i, parts[i]);
+                sources[i] = new StreamSource(new StringReader(maybeResolveUrlReference(parts[i])));
+            }
+        }
+        return sources;
+    }
 
     // If the value of a property contains a pair of curlies,
     // eg, {apiproxy.name}, then "resolve" the value by de-referencing
-    // any context variable whose name appears between the curlies.
-    private String resolvePropertyValue(String spec, MessageContext msgCtxt) {
+    // the context variable whose name appears between the curlies.
+    // If the variable name is not known, then it returns a null.
+    protected String resolvePropertyValue(String spec, MessageContext msgCtxt) {
         Matcher matcher = variableReferencePattern.matcher(spec);
         StringBuffer sb = new StringBuffer();
         while (matcher.find()) {
             matcher.appendReplacement(sb, "");
             sb.append(matcher.group(1));
-            sb.append((String) msgCtxt.getVariable(matcher.group(2)));
+            Object v = msgCtxt.getVariable(matcher.group(2));
+            if (v != null){
+                sb.append((String) v );
+            }
             sb.append(matcher.group(3));
         }
         matcher.appendTail(sb);
-        return sb.toString();
+        return (sb.length() > 0) ? sb.toString() : null;
     }
 
     private static InputStream getResourceAsStream(String resourceName) throws IOException {
@@ -264,8 +281,10 @@ public class XsdValidatorCallout implements Execution {
         boolean debug = getDebug();
         try {
             SchemaFactory notThreadSafeFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-            String xsd = getXsd(msgCtxt);
-            Schema schema = notThreadSafeFactory.newSchema(new StreamSource(new StringReader(xsd)));
+            StreamSource[] sources = getXsd(msgCtxt);
+            // the schema order is important.
+            // If A imports B, then you must have B before A in the array you use to create the schema.
+            Schema schema = notThreadSafeFactory.newSchema(sources);
             Validator validator = schema.newValidator();
             errorHandler = new CustomValidationErrorHandler(msgCtxt, debug);
             validator.setErrorHandler(errorHandler);
