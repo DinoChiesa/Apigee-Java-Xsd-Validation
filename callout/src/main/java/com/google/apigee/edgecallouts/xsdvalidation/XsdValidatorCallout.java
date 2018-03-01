@@ -52,7 +52,6 @@
 
 package com.google.apigee.edgecallouts.xsdvalidation;
 
-
 import com.apigee.flow.execution.ExecutionContext;
 import com.apigee.flow.execution.ExecutionResult;
 import com.apigee.flow.execution.IOIntensive;
@@ -85,31 +84,18 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
-
+import com.google.apigee.edgecallouts.CalloutBase;
 
 @IOIntensive
-public class XsdValidatorCallout implements Execution {
+public class XsdValidatorCallout extends CalloutBase implements Execution {
     private static final String varPrefix = "xsd_";
-    private static final String variableReferencePatternString = "(.*?)\\{([^\\{\\}]+?)\\}(.*?)";
-    private final static Pattern variableReferencePattern = Pattern.compile(variableReferencePatternString);
     private static final String urlReferencePatternString = "^(https?://)(.+)$";
     private final static Pattern urlReferencePattern = Pattern.compile(urlReferencePatternString);
     private LoadingCache<String, String> fileResourceCache;
     private LoadingCache<String, String> urlResourceCache;
-    private Map<String,String> properties; // read-only
 
     public XsdValidatorCallout (Map properties) {
-        // convert the untyped Map to a generic map
-        Map<String,String> m = new HashMap<String,String>();
-        Iterator iterator = properties.keySet().iterator();
-        while(iterator.hasNext()){
-            Object key = iterator.next();
-            Object value = properties.get(key);
-            if ((key instanceof String) && (value instanceof String)) {
-                m.put((String) key, (String) value);
-            }
-        }
-        this.properties = Collections.unmodifiableMap(m);
+        super(properties);
 
         fileResourceCache = CacheBuilder.newBuilder()
             .concurrencyLevel(4)
@@ -160,20 +146,13 @@ public class XsdValidatorCallout implements Execution {
                 });
     }
 
-    private static String varName(String s) {
-        return varPrefix + s;
+    public String getVarnamePrefix() {
+        return varPrefix;
     }
 
     private String getSourceProperty() {
         String sourceProp = (String) this.properties.get("source");
         return (sourceProp == null || sourceProp.equals("")) ? "message" : sourceProp;
-    }
-
-    private boolean getDebug() {
-        String value = (String) this.properties.get("debug");
-        if (value == null) return false;
-        if (value.trim().toLowerCase().equals("true")) return true;
-        return false;
     }
 
     private Source getSource(MessageContext msgCtxt) throws IOException {
@@ -233,26 +212,6 @@ public class XsdValidatorCallout implements Execution {
         return sources;
     }
 
-    // If the value of a property contains a pair of curlies,
-    // eg, {apiproxy.name}, then "resolve" the value by de-referencing
-    // the context variable whose name appears between the curlies.
-    // If the variable name is not known, then it returns a null.
-    protected String resolvePropertyValue(String spec, MessageContext msgCtxt) {
-        Matcher matcher = variableReferencePattern.matcher(spec);
-        StringBuffer sb = new StringBuffer();
-        while (matcher.find()) {
-            matcher.appendReplacement(sb, "");
-            sb.append(matcher.group(1));
-            Object v = msgCtxt.getVariable(matcher.group(2));
-            if (v != null){
-                sb.append((String) v );
-            }
-            sb.append(matcher.group(3));
-        }
-        matcher.appendTail(sb);
-        return (sb.length() > 0) ? sb.toString() : null;
-    }
-
     private static InputStream getResourceAsStream(String resourceName) throws IOException {
         if (!resourceName.startsWith("/")) {
             resourceName = "/" + resourceName;
@@ -294,7 +253,7 @@ public class XsdValidatorCallout implements Execution {
             calloutResult = ExecutionResult.SUCCESS;
         }
         catch (Exception e) {
-            if (debug) {
+            if (debug || true) {
                 String stacktrace = ExceptionUtils.getStackTrace(e);
                 //System.out.println(stacktrace);  // to MP stdout
                 msgCtxt.setVariable(varName("stacktrace"), stacktrace);
