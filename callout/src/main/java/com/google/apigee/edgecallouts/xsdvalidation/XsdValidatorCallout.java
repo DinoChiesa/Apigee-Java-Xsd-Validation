@@ -2,7 +2,8 @@
 //
 // A callout for Apigee Edge that performs a validation of an XML document against an XSD.
 //
-// Copyright 2017 Google Inc.
+// Copyright (c) 2015-2016 by Dino Chiesa and Apigee Corporation.
+// Copyright (c) 2017-2018 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,18 +38,11 @@
 //     <Property name='param_y'>{variable-containing-value-of-param}</Property>
 //     <Property name='param_z'>file://something.xsd</Property> <!-- resource in jar -->
 //   </Properties>
-//   <ClassName>com.dinochiesa.xslt.XsltCallout</ClassName>
-//   <ResourceURL>java://edgecallout-xslt.jar</ResourceURL>
+//   <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
+//   <ResourceURL>java://edge-custom-xsd-validation-1.0.4.jar</ResourceURL>
 // </JavaCallout>
 //
-//
-// ----------------------------------------------------------
-//
-// This software is licensed under the Apache Source license 2.0.
-// See the accompanying LICENSE file.
-//
-// Copyright (c) 2015, 2016 by Dino Chiesa and Apigee Corporation, 2017 Google Inc.
-//
+
 
 package com.google.apigee.edgecallouts.xsdvalidation;
 
