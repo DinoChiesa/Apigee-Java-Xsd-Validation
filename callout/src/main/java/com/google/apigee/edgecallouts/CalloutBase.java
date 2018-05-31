@@ -1,4 +1,4 @@
-// Copyright 2018 Google Inc.
+// Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,7 +48,10 @@ public abstract class CalloutBase {
     protected String getOutputVar(MessageContext msgCtxt) throws Exception {
         String dest = getSimpleOptionalProperty("output-variable", msgCtxt);
         if (dest == null) {
-            return "message.content";
+            dest = getSimpleOptionalProperty("output", msgCtxt);
+            if (dest == null) {
+                return "message.content";
+            }
         }
         return dest;
     }
@@ -60,23 +63,23 @@ public abstract class CalloutBase {
     }
 
     protected String normalizeString(String s) {
-            s = s.replaceAll("^ +","");
-            s = s.replaceAll("(\r|\n) +","\n");
-            return s.trim();
+        s = s.replaceAll("^ +","");
+        s = s.replaceAll("(\r|\n) +","\n");
+        return s.trim();
     }
 
     protected String getSimpleRequiredProperty(String propName, MessageContext msgCtxt) throws Exception {
         String value = (String) this.properties.get(propName);
         if (value == null) {
-            throw new IllegalStateException(propName + " resolves to an empty string.");
+            throw new IllegalStateException(String.format("configuration error: %s resolves to an empty string", propName));
         }
         value = value.trim();
         if (value.equals("")) {
-            throw new IllegalStateException(propName + " resolves to an empty string.");
+            throw new IllegalStateException(String.format("configuration error: %s resolves to an empty string", propName));
         }
         value = resolvePropertyValue(value, msgCtxt);
         if (value == null || value.equals("")) {
-            throw new IllegalStateException(propName + " resolves to an empty string.");
+            throw new IllegalStateException(String.format("configuration error: %s resolves to an empty string", propName));
         }
         return value;
     }

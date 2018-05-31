@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.google.apigee.callout</groupId>
   <artifactId>edge-custom-xsd-validation</artifactId>
-  <version>1.0.4</version>
+  <version>1.0.5</version>
   <name>EdgeCustomXsdValidation</name>
   <url>http://maven.apache.org</url>
   <packaging>jar</packaging>
@@ -14,9 +14,12 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.8</java.version>
     <testng.version>6.8.7</testng.version> <!-- current: 6.9.4 -->
-    <guava.version>23.0</guava.version>
+    <guava.version>25.1-jre</guava.version>
     <jmockit.version>1.7</jmockit.version>
     <jackson.version>2.9.2</jackson.version>
+    <commons.codec.version>1.11</commons.codec.version>
+    <commons.io.version>2.0.1</commons.io.version>
+    <commons.lang.version>2.6</commons.lang.version>
     <apiproxy.java.rsrc.dir>../bundle/apiproxy/resources/java</apiproxy.java.rsrc.dir>
   </properties>
 
@@ -25,32 +28,21 @@
     <dependency>
       <groupId>commons-lang</groupId>
       <artifactId>commons-lang</artifactId>
-      <version>2.6</version>
-      <scope>compile</scope>
+      <version>${commons.lang.version}</version>
     </dependency>
 
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
-      <version>1.6</version>
+      <version>${commons.codec.version}</version>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
     <dependency>
-    <groupId>commons-io</groupId>
-    <artifactId>commons-io</artifactId>
-    <version>2.0.1</version>
-      <scope>compile</scope>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>${commons.io.version}</version>
     </dependency>
 
-<!--
-    <dependency>
-      <groupId>commons-validator</groupId>
-      <artifactId>commons-validator</artifactId>
-      <version>1.4.1</version>
-      <scope>compile</scope>
-    </dependency>
--->
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
@@ -119,7 +111,7 @@ mvn install:install-file \
     <dependency>
       <groupId>com.googlecode.jmockit</groupId>
       <artifactId>jmockit</artifactId>
-      <version>1.7</version>
+      <version>${jmockit.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -151,7 +143,7 @@ mvn install:install-file \
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>2.3.2</version>
+        <version>3.7.0</version>
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
@@ -161,16 +153,7 @@ mvn install:install-file \
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>2.6</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-
+        <version>3.0.2</version>
         <configuration>
           <archive>
             <!-- do not include the pom.xml file in the generated jar -->
@@ -191,10 +174,10 @@ mvn install:install-file \
                   <fileset dir="${project.build.directory}">
                     <include name="${project.artifactId}-${project.version}.jar"/>
                     <!-- copy required dependencies: -->
-                    <include name="lib/commons-lang-2.6.jar"/>
-                    <include name="lib/commons-codec-1.6.jar"/>
-                    <include name="lib/commons-io-2.0.1.jar"/>
-                    <include name="lib/guava-23.0.jar"/>
+                    <include name="lib/commons-lang-${commons.lang.version}.jar"/>
+                    <include name="lib/commons-codec-${commons.codec.version}.jar"/>
+                    <include name="lib/commons-io-${commons.io.version}.jar"/>
+                    <include name="lib/guava-${guava.version}.jar"/>
                     <!--                    -->
                   </fileset>
                   <mapper type="flatten"/>
