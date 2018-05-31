@@ -180,8 +180,8 @@ Pull requests are welcomed!
 - Apigee Edge expressions v1.0
 - Apigee Edge message-flow v1.0
 - Apache commons lang 2.6
-- Apache commons validator 1.4.1
 - Apache commons io 2.0.1
+- Apache commons codec 1.11
 
 
 ## License
