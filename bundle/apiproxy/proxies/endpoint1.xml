@@ -10,7 +10,11 @@
 
   <PreFlow name="PreFlow">
     <Request/>
-    <Response/>
+    <Response>
+      <Step>
+        <Name>AM-CleanResponseHeaders</Name>
+      </Step>
+    </Response>
   </PreFlow>
 
   <PostFlow name="PostFlow">
