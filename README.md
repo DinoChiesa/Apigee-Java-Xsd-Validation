@@ -4,9 +4,10 @@ This directory contains the Java source code required to compile a Java
 callout for Apigee Edge that does Validation of an XML document against an XSD. There's a built-in policy that
 does this; this callout is different in that it is a bit more flexible.
 
-* the person configuring the policy can specify the XSD sheet in a context variable.
-  This is nice because it means the XSD can be dynamically determined at runtime.
+* The person configuring the policy can specify the XSD sheet in a context variable.
+  This is nice because it means the XSD can be dynamically determined or loaded at runtime.
 * It is possible to specify an XSD source available at an HTTP endpoint
+* The error messages that get emitted are more verbose and informative.
 
 
 ## Disclaimer
@@ -42,9 +43,9 @@ If you want to build it, feel free.  The instructions are at the bottom of this 
    ```
 
 5. use the Edge UI, or a command-line tool like
-   [pushapi](https://github.com/carloseberhardt/apiploy) or
    [importAndDeploy.js](https://github.com/DinoChiesa/apigee-edge-js/blob/master/examples/importAndDeploy.js)
-   or similar to import the proxy into an Edge organization, and then deploy the proxy.
+   or Powershell's [Import-EdgeApi](https://github.com/DinoChiesa/Edge-Powershell-Admin/blob/develop/PSApigeeEdge/Public/Import-EdgeApi.ps1)
+   or similar to import the proxy into an Edge organization. If you need to, make sure to deploy the proxy.
 
 6. use a client (like curl, or Postman, or Powershell's Invoke-WebRequest) to generate and send http requests to tickle the proxy.
 
@@ -64,7 +65,7 @@ To use this callout, you will need an API Proxy, of course.
 ## Example 1: Perform a simple validation
 
 ```xml
-<JavaCallout name='JavaCallout-Xslt-1'>
+<JavaCallout name='JavaCallout-XSD-1'>
   <Properties>
      <Property name='xsd'>{xsdurl}</Property>
      <Property name='source'>request</Property>
@@ -111,7 +112,7 @@ In the case that you have multiple XSDs, in which one XSD imports another, then 
 Specify them in the xsd property, separated by commas, like this:
 
 ```xml
-<JavaCallout name='JavaCallout-Xslt-1'>
+<JavaCallout name='JavaCallout-XSD-1'>
   <Properties>
      <Property name='xsd'>{xsdurl1},{xsdurl2},https://foo/bar/bam/schemaurl.xsd</Property>
      <Property name='source'>request</Property>
@@ -136,12 +137,12 @@ The policy does not have the capability to retrieve the source XML from a URL, o
 
 The policy sets these context variables as output:
 
-| variable name           | description        |
-------------------------- | ------------------ |
-| xsd_valid               |  result of the validation check. It will hold "true" if the document is valid against the schema; "false" if not. If the XML is not well-formed, then the value will get "false".
-| xsd_validation_exception| a string, containing a list of 1 or more messages, each separated by a newline, indicating what makes the document invalid. If the document his valid, this variable will be null. This could be suitable for sending back to the caller.
-| xsd_error               | set if the policy failed. This is usually the result of a configuration error. Processing an invalid document will not be a failure. The policy succeeds though the document is deemed invalid.
-| xsd_exception           | a diagnostic message indicating what caused the policy to fail at runtime. Set only if xsd_error is set.
+| variable name            | description        |
+-------------------------- | ------------------ |
+| xsd_valid                |  result of the validation check. It will hold "true" if the document is valid against the schema; "false" if not. If the XML is not well-formed, then the value will get "false".
+| xsd_validation_exceptions| a string, containing a list of 1 or more messages, each separated by a newline, indicating what makes the document invalid. If the document his valid, this variable will be null. This could be suitable for sending back to the caller.
+| xsd_error                | set if the policy failed. This is usually the result of a configuration error. Processing an invalid document will not be a failure. The policy succeeds though the document is deemed invalid.
+| xsd_exception            | a diagnostic message indicating what caused the policy to fail at runtime. Set only if xsd_error is set.
 
 
 Here's an example of the list of messages emitted in xsd_validation_exceptions when a not-well-formed XML document is validated against a schema for "puchaseOrder":
@@ -152,6 +153,73 @@ Here's an example of the list of messages emitted in xsd_validation_exceptions w
 ```
 
 The list of messages is limited to 10.
+
+## Sample Proxy
+
+There is [a sample API Proxy](./bundle) included in this repo.  It verifies an inbound message against an XSD that is assigned in an AssignedMessage policy.
+Deploy it to your org + environment, and test it like this:
+
+Success case; document is valid per schema:
+```
+ORG=myorg
+ENV-myenv
+curl -i -H content-type:application/xml \
+  https://$ORG-$ENV.apigee.net/java-xsd/t1 \
+  -d '<purchaseOrder xmlns="http://tempuri.org/po.xsd" orderDate="2018-07-09">
+    <shipTo country="US">
+        <name>Alice Smith</name>
+        <street>123 Maple Street</street>
+        <city>Mill Valley</city>
+        <state>CA</state>
+        <zip>90952</zip>
+    </shipTo>
+    <billTo country="US">
+        <name>Robert Smith</name>
+        <street>8 Oak Avenue</street>
+        <city>Old Town</city>
+        <state>PA</state>
+        <zip>95819</zip>
+    </billTo>
+    <comment>Hurry, my lawn is going wild!</comment>
+    <items>
+        <item partNum="872-AA">
+            <productName>Lawnmower</productName>
+            <quantity>1</quantity>
+            <USPrice>148.95</USPrice>
+            <comment>Confirm this is electric</comment>
+        </item>
+        <item partNum="926-AA">
+            <productName>Baby Monitor</productName>
+            <quantity>1</quantity>
+            <USPrice>39.98</USPrice>
+            <shipDate>1999-05-21</shipDate>
+        </item>
+    </items>
+</purchaseOrder>
+'
+```
+
+Rejection case; document is invalid per schema:
+
+```
+curl -i -H content-type:application/xml \
+  https://$ORG-$ENV.apigee.net/java-xsd/t1 \
+  -d '<purchaseOrder xmlns="http://tempuri.org/po.xsd" orderDate="2018-07-09">
+         <name>Alice Smith</name>
+        <street>123 Maple Street</street>
+        <city>Mill Valley</city>
+        <state>CA</state>
+        <zip>90952</zip>
+     <billTo country="US">
+        <name>Robert Smith</name>
+        <street>8 Oak Avenue</street>
+        <city>Old Town</city>
+        <state>PA</state>
+        <zip>95819</zip>
+    </billTo>
+ </purchaseOrder>
+'
+```
 
 
 ## Building
@@ -201,6 +269,5 @@ guarantee for responses to inquiries regarding this callout.
 ## Bugs
 
 * The tests are incomplete. For example, there are no tests involving schema that include other schema.
-* There is no sample API Proxy bundle.
 * Instances of the SchemaFactory are not pooled - this might improve perf at load, not sure.
 

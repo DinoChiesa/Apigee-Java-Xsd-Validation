@@ -1,0 +1,16 @@
+<APIProxy name="java-xsd">
+  <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+  <CreatedAt>1491498008040</CreatedAt>
+  <Description/>
+  <DisplayName>java-xsd</DisplayName>
+  <LastModifiedAt>1491517153495</LastModifiedAt>
+  <Policies/>
+  <ProxyEndpoints>
+  </ProxyEndpoints>
+  <Resources/>
+  <Spec/>
+  <TargetServers/>
+  <TargetEndpoints>
+  </TargetEndpoints>
+  <validate>false</validate>
+</APIProxy>

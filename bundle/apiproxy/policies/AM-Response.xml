@@ -1,0 +1,13 @@
+<AssignMessage name='AM-Response'>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <Set>
+    <Payload contentType='application/json'>{
+  "valid" : "{xsd_valid}",
+  "message" : "{escapeJSON(xsd_validation_exceptions)}"
+}
+</Payload>
+    <StatusCode>200</StatusCode>
+    <ReasonPhrase>OK</ReasonPhrase>
+  </Set>
+
+</AssignMessage>
