@@ -221,6 +221,20 @@ curl -i -H content-type:application/xml \
 '
 ```
 
+The response in this case is:
+```
+HTTP/1.1 200 OK
+Date: Tue, 13 Nov 2018 19:25:42 GMT
+Content-Type: application/json
+Content-Length: 249
+Connection: keep-alive
+
+{
+  "valid" : "false",
+  "message" : "1. org.xml.sax.SAXParseException; lineNumber: 2; columnNumber: 16; cvc-complex-type.2.4.a: Invalid content was found starting with element 'name'. One of '{\"http://tempuri.org/po.xsd\":shipTo}' is expected."
+}
+
+```
 
 ## Building
 
@@ -229,15 +243,15 @@ Building from source requires Java 1.8, and Maven.
 1. unpack (if you can read this, you've already done that).
 
 2. Before building _the first time_, configure the build on your machine by loading the Apigee jars into your local cache:
-  ```
-  ./buildsetup.sh
-  ```
+   ```
+   ./buildsetup.sh
+   ```
 
 3. Build with maven.
-  ```
-  mvn clean package
-  ```
-  This will build the jar and also run all the tests.
+   ```
+   mvn clean package
+   ```
+   This will build the jar and also run all the tests.
 
 
 Pull requests are welcomed!
