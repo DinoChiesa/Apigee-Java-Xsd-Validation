@@ -50,6 +50,8 @@ import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -75,7 +77,6 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import org.apache.commons.io.IOUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -127,7 +128,7 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
                         try {
                             URL url = new URL(key);
                             in = url.openStream ();
-                            s = new String(IOUtils.toByteArray(in), StandardCharsets.UTF_8);
+                            s = new String(readAllBytes(in), StandardCharsets.UTF_8);
                         }
                         catch (java.lang.Exception exc1) {
                             // gulp
@@ -138,6 +139,16 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
                         return s.trim();
                     }
                 });
+    }
+
+    private static byte[] readAllBytes(InputStream in) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int nRead;
+        byte[] data = new byte[2048];
+        while ((nRead = in.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, nRead);
+        }
+        return buffer.toByteArray();
     }
 
     public String getVarnamePrefix() {
@@ -186,7 +197,7 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
         if (!s.startsWith("<")) {
             throw new IllegalStateException(String.format("source '%s' does not appear to be XML", sourceProp));
         }
-        InputStream s2 = IOUtils.toInputStream(s, "UTF-8");
+        InputStream s2 = new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
         if (useDomSource()) {
             return newDomSource(s2);
         }
