@@ -162,24 +162,27 @@ Here's an example of the list of messages emitted in xsd_validation_exceptions w
 The list of messages is limited to 10.
 
 
-To get the failing element, use the `use-dom-source` property.
+To get the failing element, set the `use-dom-source` property to "true":
+
 ```xml
 <JavaCallout name='JavaCallout-XSD-3'>
   <Properties>
      <Property name='xsd'>{xsdurl1},{xsdurl2},https://foo/bar/bam/schemaurl.xsd</Property>
      <Property name='source'>request</Property>
-     <Property name='use-dom-source'>request</Property>
+     <Property name='use-dom-source'>true</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
   <ResourceURL>java://edge-custom-xsd-validation-1.0.6.jar</ResourceURL>
 </JavaCallout>
 ```
 
-...and then check the context variable `xsd_failing_paths` for the path to the element.
+...and then, in the proxy logic, check the context variable `xsd_failing_paths` for the path to the element.
 Some notes:
 
-* If there is more than one path, they will be separated by commas
-* These are not xpaths. There is not a general way to determine a valid xpath from an element.
+* A failing path looks like: "#document/purchaseOrder/billTo/state". These are
+  not xpaths, but rather labels intended to help with human diagnostics.
+  (There is not a general way to determine a valid xpath from an element.)
+* If there is more than one path, they will be separated by commas.
 * Using the `use-dom-source` will consume more memory per request. It is not recommended for high-scale use with large documents.
 
 
