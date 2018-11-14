@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.xml.validation.Validator;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXParseException;
 
@@ -30,19 +33,21 @@ public class CustomValidationErrorHandler implements ErrorHandler {
     int _errorCount;
     boolean _debug = false;
     List<String> exceptionList;
+    List<String> pathList;
+    Validator validator;
+
     private static String varName(String s) {
         return _prefix + s;
     }
 
-    public CustomValidationErrorHandler(MessageContext msgCtxt) {
+    // public CustomValidationErrorHandler(MessageContext msgCtxt) {
+    //     this(msgCtxt, false);
+    // }
+    public CustomValidationErrorHandler(MessageContext msgCtxt, Validator validator, boolean debug) {
         _msgCtxt = msgCtxt;
         _warnCount = 0;
         _errorCount = 0;
-    }
-    public CustomValidationErrorHandler(MessageContext msgCtxt, boolean debug) {
-        _msgCtxt = msgCtxt;
-        _warnCount = 0;
-        _errorCount = 0;
+        this.validator = validator;
         _debug = debug;
     }
     public void error(SAXParseException exception) {
@@ -74,11 +79,37 @@ public class CustomValidationErrorHandler implements ErrorHandler {
         addException(exception);
     }
 
+    private static String getFullPathOfElement(Node element) {
+        String path = null;
+        Node node = element;
+        if (node != null){
+            while( node != null) {
+                path = (path==null)? node.getNodeName() : node.getNodeName() + '/' + path;
+                node = node.getParentNode();
+            }
+        }
+        return path;
+    }
+
     private void addException(SAXParseException ex) {
         if (this.exceptionList == null)
             this.exceptionList = new ArrayList<>(); // lazy create
         if (exceptionList.size() < RECORDED_EXCEPTION_LIMIT)
             this.exceptionList.add(ex.toString());
+        if (this.pathList == null)
+            this.pathList = new ArrayList<>(); // lazy create
+        if (pathList.size() < RECORDED_EXCEPTION_LIMIT) {
+            try {
+                Element curElement = (Element)validator.getProperty("http://apache.org/xml/properties/dom/current-element-node");
+
+                if (curElement!=null) {
+                    this.pathList.add(getFullPathOfElement(curElement));
+                }
+            }
+            catch(Exception purposefullyIgnoredNestedException) {
+                //purposefullyIgnoredNestedException.printStackTrace(System.out);
+            }
+        }
     }
 
     public boolean isValid() {
@@ -87,6 +118,12 @@ public class CustomValidationErrorHandler implements ErrorHandler {
 
     public int getErrorCount() {
         return this._errorCount;
+    }
+
+    public String getPaths() {
+        if (this.pathList == null) return null;
+        LineCounter lc = new LineCounter();
+        return (String) pathList.stream().collect(Collectors.joining(","));
     }
 
     public String getConsolidatedExceptionMessage() {

@@ -30,13 +30,6 @@
 //     <!-- The document to be validated.  If of type Message, then policy will use x.content -->
 //     <Property name='source'>name-of-variable-containing-XML-doc</Property>
 //
-//     <!-- where to put the transformed data. If none, put in message.content -->
-//     <Property name='output'>name-of-variable-to-hold-output</Property>
-//
-//     <!-- arbitrary params to pass to the XSLT -->
-//     <Property name='param_x'>string value of param</Property>
-//     <Property name='param_y'>{variable-containing-value-of-param}</Property>
-//     <Property name='param_z'>file://something.xsd</Property> <!-- resource in jar -->
 //   </Properties>
 //   <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
 //   <ResourceURL>java://edge-custom-xsd-validation-1.0.4.jar</ResourceURL>
@@ -52,6 +45,8 @@ import com.apigee.flow.execution.IOIntensive;
 import com.apigee.flow.execution.spi.Execution;
 import com.apigee.flow.message.Message;
 import com.apigee.flow.message.MessageContext;
+import com.google.apigee.edgecallouts.CalloutBase;
+import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -71,14 +66,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
-import com.google.apigee.edgecallouts.CalloutBase;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 @IOIntensive
 public class XsdValidatorCallout extends CalloutBase implements Execution {
@@ -149,28 +149,48 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
         return (sourceProp == null || sourceProp.equals("")) ? "message" : sourceProp;
     }
 
-    private Source getSource(MessageContext msgCtxt) throws IOException {
+    private boolean useDomSource() {
+        String wantDom = (String) this.properties.get("use-dom-source");
+        boolean dom = (wantDom != null) && Boolean.parseBoolean(wantDom);
+        return dom;
+    }
+
+    private static DOMSource newDomSource(InputStream in)
+        throws ParserConfigurationException, SAXException, IOException {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        InputSource inputSource = new InputSource(in);
+        Document document = builder.parse(inputSource);
+        return new DOMSource(document);
+    }
+
+    private Source getSource(MessageContext msgCtxt)
+        throws IOException, ParserConfigurationException, SAXException {
         String sourceProp = getSourceProperty();
-        Source source = null;
         Object in = msgCtxt.getVariable(sourceProp);
         if (in == null) {
             throw new IllegalStateException(String.format("source '%s' is empty", sourceProp));
         }
         if (in instanceof com.apigee.flow.message.Message) {
             Message msg = (Message) in;
-            source = new StreamSource(msg.getContentAsStream());
-        }
-        else {
-            // assume it resolves to an xml string
-            String s = (String) in;
-            s = s.trim();
-            if (!s.startsWith("<")) {
-                throw new IllegalStateException(String.format("source '%s' does not appear to be XML", sourceProp));
+            if (useDomSource()) {
+                return newDomSource(msg.getContentAsStream());
             }
-            InputStream s2 = IOUtils.toInputStream(s, "UTF-8");
-            source = new StreamSource(s2);
+            return new StreamSource(msg.getContentAsStream());
         }
-        return source;
+
+        // assume it resolves to an xml string
+        String s = (String) in;
+        s = s.trim();
+        if (!s.startsWith("<")) {
+            throw new IllegalStateException(String.format("source '%s' does not appear to be XML", sourceProp));
+        }
+        InputStream s2 = IOUtils.toInputStream(s, "UTF-8");
+        if (useDomSource()) {
+            return newDomSource(s2);
+        }
+        return new StreamSource(s2);
     }
 
     private StreamSource[] getXsd(MessageContext msgCtxt)
@@ -196,10 +216,8 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
         }
         else {
             String[] parts = xsdValue.split(",");
-            //System.out.printf("\n** found %d xsds\n", parts.length);
             sources = new StreamSource[parts.length];
             for (int i=0; i < parts.length; i++) {
-                //System.out.printf("** part[%d] = '%s'\n", i, parts[i]);
                 sources[i] = new StreamSource(new StringReader(maybeResolveUrlReference(parts[i])));
             }
         }
@@ -232,27 +250,29 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
         ExecutionResult calloutResult = ExecutionResult.ABORT;
         CustomValidationErrorHandler errorHandler = null;
         boolean debug = getDebug();
+        Validator validator = null;
         try {
             SchemaFactory notThreadSafeFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
             StreamSource[] sources = getXsd(msgCtxt);
             // the schema order is important.
             // If A imports B, then you must have B before A in the array you use to create the schema.
             Schema schema = notThreadSafeFactory.newSchema(sources);
-            Validator validator = schema.newValidator();
-            errorHandler = new CustomValidationErrorHandler(msgCtxt, debug);
+            validator = schema.newValidator();
+            errorHandler = new CustomValidationErrorHandler(msgCtxt, validator, debug);
             validator.setErrorHandler(errorHandler);
             Source source = getSource(msgCtxt);
             validator.validate(source);
             msgCtxt.setVariable(varName("valid"), errorHandler.isValid());
             calloutResult = ExecutionResult.SUCCESS;
         }
-        catch (Exception e) {
-            if (debug || true) {
-                String stacktrace = ExceptionUtils.getStackTrace(e);
+        catch (Exception ex) {
+            msgCtxt.setVariable(varName("valid"), false);
+            if (debug) {
+                String stacktrace = Throwables.getStackTraceAsString(ex);
                 //System.out.println(stacktrace);  // to MP stdout
                 msgCtxt.setVariable(varName("stacktrace"), stacktrace);
             }
-            String error = e.toString();
+            String error = ex.toString();
             msgCtxt.setVariable(varName("exception"), error);
             msgCtxt.setVariable(varName("error"), error);
         }
@@ -261,6 +281,10 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
                 String consolidatedExceptionMessage = errorHandler.getConsolidatedExceptionMessage();
                 if (consolidatedExceptionMessage != null) {
                     msgCtxt.setVariable(varName("validation_exceptions"), consolidatedExceptionMessage);
+                }
+                String paths = errorHandler.getPaths();
+                if (paths != null) {
+                    msgCtxt.setVariable(varName("failing_paths"), paths);
                 }
             }
         }

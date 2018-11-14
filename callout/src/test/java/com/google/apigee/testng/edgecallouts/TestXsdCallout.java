@@ -46,7 +46,7 @@ import org.testng.annotations.Test;
 public class TestXsdCallout {
     private final static String testDataDir = "src/test/resources/test-data";
 
-    MessageContext msgCtxt;
+    MessageContext messageContext;
     InputStream messageContentStream;
     Message message;
     ExecutionContext exeCtxt;
@@ -54,7 +54,7 @@ public class TestXsdCallout {
     @BeforeMethod()
     public void beforeMethod() {
 
-        msgCtxt = new MockUp<MessageContext>() {
+        messageContext = new MockUp<MessageContext>() {
             private Map variables;
             public void $init() {
                 variables = new HashMap();
@@ -177,9 +177,9 @@ public class TestXsdCallout {
     @Test(dataProvider = "batch1")
     public void test2_Configs(TestCase tc) throws Exception {
         if (tc.getDescription()!= null)
-            System.out.printf("  %-40s - %s\n", tc.getTestName(), tc.getDescription() );
+            System.out.printf("\n  %-40s - %s\n", tc.getTestName(), tc.getDescription() );
         else
-            System.out.printf("  %-40s\n", tc.getTestName() );
+            System.out.printf("\n  %-40s\n", tc.getTestName() );
 
         // set variables into message context
         for (Map.Entry<String, String> entry : tc.getContext().entrySet()) {
@@ -188,18 +188,18 @@ public class TestXsdCallout {
             if (value.startsWith("file://")) {
                 value = resolveFileReference(value);
             }
-            msgCtxt.setVariable(key, value);
+            messageContext.setVariable(key, value);
         }
 
         messageContentStream = getInputStream(tc);
 
         XsdValidatorCallout callout = new XsdValidatorCallout(tc.getProperties());
-        ExecutionResult actualResult = callout.execute(msgCtxt, exeCtxt);
+        ExecutionResult actualResult = callout.execute(messageContext, exeCtxt);
         String s = tc.getExpected().get("success").toString();
         ExecutionResult expectedResult = (s!=null && s.toLowerCase().equals("true")) ?
                                            ExecutionResult.SUCCESS : ExecutionResult.ABORT;
 
-        String messages = msgCtxt.getVariable("xsd_validation_exceptions");
+        String messages = messageContext.getVariable("xsd_validation_exceptions");
         if (messages != null) {
             System.out.printf("\n  ** Generated Exceptions during Validation:\n%s\n", messages);
         }
@@ -210,12 +210,12 @@ public class TestXsdCallout {
                 String b = o.toString();
                 Assert.assertNotNull(b, tc.getTestName() + ": broken; no expected validity specified");
                 boolean expectedValidity = Boolean.parseBoolean(b);
-                boolean actualValidity = msgCtxt.getVariable("xsd_valid");
+                boolean actualValidity = messageContext.getVariable("xsd_valid");
                 Assert.assertEquals(actualValidity, expectedValidity, tc.getTestName() + ": validity not as expected");
                 o = tc.getExpected().get("error");
                 if (o != null) {
                     String expectedError = o.toString();
-                    String observedError = msgCtxt.getVariable("xsd_error");
+                    String observedError = messageContext.getVariable("xsd_error");
                     Assert.assertNotNull(observedError, tc.getTestName() + ": no error observed, expected ("+ expectedError +")");
                     Assert.assertTrue(observedError.endsWith(expectedError), tc.getTestName() + ": error not as expected (" + observedError + ")");
                 }
@@ -223,7 +223,7 @@ public class TestXsdCallout {
             else {
                 String expectedError = tc.getExpected().get("error").toString();
                 Assert.assertNotNull(expectedError, tc.getTestName() + ": broken; no expected error specified");
-                String actualError = msgCtxt.getVariable("xsd_error");
+                String actualError = messageContext.getVariable("xsd_error");
                 Assert.assertTrue(actualError.endsWith(expectedError), tc.getTestName() + ": error not as expected (" + actualError + ")");
             }
             if (messages != null) {
@@ -234,9 +234,37 @@ public class TestXsdCallout {
                     Assert.assertEquals(lines, expectedExceptionCount, tc.getTestName() + ": exception count");
                 }
             }
+
+            Map<String, Object> outputVariableMap = (Map<String, Object>) tc.getExpected().get("context-variables");
+            if (outputVariableMap != null) {
+                for (String key : outputVariableMap.keySet()) {
+                    System.out.printf("** Examining ctxt var (%s)\n", key);
+
+                    Object objValue = outputVariableMap.get(key);
+                    if (objValue instanceof Double) {
+                        Assert.assertEquals(new Double(messageContext.getVariable(key).toString()),
+                                     (Double) objValue,
+                                     tc.getTestName() + ": context-variable:" + key);
+                    }
+                    else if (objValue instanceof Long) {
+                        Assert.assertEquals(new Long(messageContext.getVariable(key)),
+                                     (Long) objValue,
+                                     tc.getTestName() + ": context-variable:" + key);
+                    }
+                    else {
+                        String expectedStringValue = objValue.toString();
+                        Object actualObjectValue = messageContext.getVariable(key);
+                        Assert.assertNotNull(actualObjectValue, tc.getTestName() + ": context-variable:" + key);
+                        String actualStringValue = actualObjectValue.toString();
+                        Assert.assertEquals(actualStringValue, expectedStringValue, tc.getTestName() + ": context-variable:" + key);
+                    }
+                }
+            }
+
+
         }
         else {
-            String observedError = msgCtxt.getVariable("xsd_error");
+            String observedError = messageContext.getVariable("xsd_error");
             System.err.printf("    unexpected error: %s\n", observedError);
             Assert.assertEquals(actualResult, expectedResult, tc.getTestName() + ": result not as expected");
         }

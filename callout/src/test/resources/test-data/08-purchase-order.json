@@ -4,7 +4,7 @@
     "inputVar" : "file://purchase-order.xml"
   },
   "properties" : {
-    "debug" : false,
+    "debug" : "false",
     "source" : "inputVar",
     "xsd" : "{myxsd}"
   },

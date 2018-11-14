@@ -1,16 +1,16 @@
 {
   "context" : {
     "myxsd" : "file://schema-for-purchase-order.xsd",
-    "inputVar" : "file://purchase-order-modified.xml"
+    "inputVar" : "file://purchase-order.xml"
   },
   "properties" : {
-    "debug" : false,
+    "debug" : "false",
+    "use-dom-source" : "true",
     "source" : "inputVar",
     "xsd" : "{myxsd}"
   },
   "expected" : {
     "success" : true,
-    "valid" : false,
-    "exceptionCount" : 1
+    "valid" : true
   }
 }

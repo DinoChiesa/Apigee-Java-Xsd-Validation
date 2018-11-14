@@ -4,5 +4,5 @@
      <Property name='source'>request</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://edge-custom-xsd-validation-1.0.5.jar</ResourceURL>
+  <ResourceURL>java://edge-custom-xsd-validation-1.0.6.jar</ResourceURL>
 </JavaCallout>

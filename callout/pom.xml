@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.google.apigee.callout</groupId>
   <artifactId>edge-custom-xsd-validation</artifactId>
-  <version>1.0.5</version>
+  <version>1.0.6</version>
   <name>EdgeCustomXsdValidation</name>
   <url>http://maven.apache.org</url>
   <packaging>jar</packaging>
@@ -19,17 +19,11 @@
     <jackson.version>2.9.5</jackson.version>
     <commons.codec.version>1.11</commons.codec.version>
     <commons.io.version>2.0.1</commons.io.version>
-    <commons.lang.version>2.6</commons.lang.version>
+
     <apiproxy.java.rsrc.dir>../bundle/apiproxy/resources/java</apiproxy.java.rsrc.dir>
   </properties>
 
   <dependencies>
-
-    <dependency>
-      <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
-      <version>${commons.lang.version}</version>
-    </dependency>
 
     <dependency>
       <groupId>commons-codec</groupId>
@@ -174,7 +168,6 @@ mvn install:install-file \
                   <fileset dir="${project.build.directory}">
                     <include name="${project.artifactId}-${project.version}.jar"/>
                     <!-- copy required dependencies: -->
-                    <include name="lib/commons-lang-${commons.lang.version}.jar"/>
                     <include name="lib/commons-codec-${commons.codec.version}.jar"/>
                     <include name="lib/commons-io-${commons.io.version}.jar"/>
                     <include name="lib/guava-${guava.version}.jar"/>

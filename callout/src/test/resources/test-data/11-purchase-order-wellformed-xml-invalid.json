@@ -1,0 +1,18 @@
+{
+  "context" : {
+    "myxsd" : "file://schema-for-purchase-order.xsd",
+    "inputVar" : "file://purchase-order-modified-billto-invalid.xml"
+  },
+  "properties" : {
+    "debug" : "false",
+    "use-dom-source" : "true",
+    "source" : "inputVar",
+    "xsd" : "{myxsd}"
+  },
+  "expected" : {
+    "success" : true,
+    "valid" : false,
+    "exceptionCount" : 1,
+    "context-variables": {"xsd_failing_paths": "#document/purchaseOrder/billTo/state" }
+  }
+}
