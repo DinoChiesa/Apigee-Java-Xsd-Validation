@@ -7,7 +7,7 @@ does this; this callout is different in that it is a bit more flexible.
 * The person configuring the policy can specify the XSD sheet in a context variable.
   This is nice because it means the XSD can be dynamically determined or loaded at runtime.
 * It is possible to specify an XSD source available at an HTTP endpoint
-* The error messages that get emitted are more verbose and informative.
+* The error messages that get emitted are more verbose and informative. This helps people diagnose runtime problems.
 
 
 ## Disclaimer
@@ -17,13 +17,14 @@ This example is not an official Google product, nor is it part of an official Go
 
 ## Using this policy
 
-You do not need to build the source code in order to use the policy in Apigee Edge.
-All you need is the built JAR, and the appropriate configuration for the policy.
-If you want to build it, feel free.  The instructions are at the bottom of this readme.
+You do not need to build the source code in order to use the policy in Apigee
+Edge.  All you need is the built JAR, and the appropriate configuration for
+the policy.  If you want to build it, feel free.  The instructions are at the
+bottom of this readme.
 
 
-1. copy the jar file, available in target/edge-custom-xsd-validation-1.0.7.jar , if you have built
-   the jar, or in [the repo](bundle/apiproxy/resources/java/edge-custom-xsd-validation-1.0.7.jar)
+1. copy the jar file, available in target/edge-custom-xsd-validation-1.0.8.jar , if you have built
+   the jar, or in [the repo](bundle/apiproxy/resources/java/edge-custom-xsd-validation-1.0.8.jar)
    if you have not, to your apiproxy/resources/java directory. Also copy all the required
    dependencies. (See below) You can do this offline, or using the graphical Proxy Editor in the
    Apigee Edge Admin Portal.
@@ -38,7 +39,7 @@ If you want to build it, feel free.  The instructions are at the bottom of this 
            ....
       </Properties>
       <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-      <ResourceURL>java://edge-custom-xsd-validation-1.0.7.jar</ResourceURL>
+      <ResourceURL>java://edge-custom-xsd-validation-1.0.8.jar</ResourceURL>
     </JavaCallout>
    ```
 
@@ -62,7 +63,8 @@ You must configure the callout with Property elements in the policy configuratio
 ---------------------- | ------------------ |
 | xsd                  |  required. the XSD or set of XSDs to use for validation |
 | source               |  optional. the string or message to use to obtain the XML to validate. Defaults to "message.content" |
-| use-dom-source       |  optional. true/false. Default: false. Use a DOMSource. This allows the callout to emit the path of the failing XML element. |
+| use-dom-source       |  optional. true/false. Default: false. When this is false, the callout cannot emit the path of the failing XML element, but it uses less memory at runtime. I recommend you set this as true during development, and consider setting it to true in production. |
+
 
 
 Examples follow.
@@ -78,7 +80,7 @@ To use this callout, you will need an API Proxy, of course.
      <Property name='source'>request</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://edge-custom-xsd-validation-1.0.7.jar</ResourceURL>
+  <ResourceURL>java://edge-custom-xsd-validation-1.0.8.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -92,8 +94,10 @@ The xsd property specifies the schema. This can be one of 4 forms:
 Note: you cannot specify an XSD which is uploaded as a resource to the proxy, or the environment, or the organization. You cannot use an xsd:// url.
 
 
-If a filename, the file must be present as a resource in the JAR file. This requires you to
-re-package the jar file. The structure of the jar must be like so:
+If using a file reference (file://something.xsd), the file must be present as a resource in the JAR file. This requires you to re-build and
+re-package the jar file. Place your .xsd file into the callout/src/main/resources directory.
+
+The structure of the generated jar must be like so:
 
 ```
 meta-inf/
@@ -125,12 +129,12 @@ Specify them in the xsd property, separated by commas, like this:
      <Property name='source'>request</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://edge-custom-xsd-validation-1.0.7.jar</ResourceURL>
+  <ResourceURL>java://edge-custom-xsd-validation-1.0.8.jar</ResourceURL>
 </JavaCallout>
 ```
 
 The order in which these are specified is important.
-If A imports B, then you must  specify B before A in the comma-separated list.
+If A imports B, then you MUST specify B before A in the comma-separated list.
 
 The source property specifies where to find the XML to be validated. This must be a variable name.
 Do not use curly-braces. If this variable resolves to a Message type (such as request or response,
@@ -143,9 +147,9 @@ The policy does not have the capability to retrieve the source XML from a URL, o
 
 The policy sets these context variables as output:
 
-| variable name            | description        |
--------------------------- | ------------------ |
-| xsd_valid                |  result of the validation check. It will hold "true" if the document is valid against the schema; "false" if not. If the XML is not well-formed, then the value will get "false".
+| variable name            | description                                                    |
+-------------------------- | -------------------------------------------------------------- |
+| xsd_valid                | result of the validation check. It will hold "true" if the document is valid against the schema; "false" if not. If the XML is not well-formed, then the value will get "false".
 | xsd_validation_exceptions| a string, containing a list of 1 or more messages, each separated by a newline, indicating what makes the document invalid. If the document his valid, this variable will be null. This could be suitable for sending back to the caller.
 | xsd_error                | set if the policy failed. This is usually the result of a configuration error. Processing an invalid document will not be a failure. The policy succeeds though the document is deemed invalid.
 | xsd_exception            | a diagnostic message indicating what caused the policy to fail at runtime. Set only if xsd_error is set.
@@ -172,7 +176,7 @@ To get the failing element, set the `use-dom-source` property to "true":
      <Property name='use-dom-source'>true</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://edge-custom-xsd-validation-1.0.7.jar</ResourceURL>
+  <ResourceURL>java://edge-custom-xsd-validation-1.0.8.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -291,15 +295,13 @@ Pull requests are welcomed!
 
 ## Build Dependencies
 
-- Apigee Edge expressions v1.0
-- Apigee Edge message-flow v1.0
-- Google Guava v25.1-jre
+- Google Guava v25.1-jre and its dependencies
 
 
 
 ## License
 
-This material is Copyright 2017-2018, Google LLC.
+This material is Copyright 2017-2019, Google LLC.
 and is licensed under the [Apache 2.0 License](LICENSE). This includes the Java code as well as the API Proxy configuration.
 
 
@@ -314,5 +316,5 @@ guarantee for responses to inquiries regarding this callout.
 ## Bugs
 
 * The tests are incomplete. For example, there are no tests involving schema that include other schema.
-* Instances of the SchemaFactory are not pooled - this might improve perf at load, not sure.
+* Instances of the SchemaFactory are not pooled. Doing so might improve perf at load.
 
