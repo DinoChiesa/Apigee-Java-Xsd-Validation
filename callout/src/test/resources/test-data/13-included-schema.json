@@ -1,0 +1,19 @@
+{
+  "context" : {
+    "xsd_parent" : "file://w3c-include-parent.xsd",
+    "xsd_child" : "file://w3c-include-child.xsd",
+    "inputVar" : "file://echoInclude.xml"
+  },
+  "properties" : {
+    "debug" : false,
+    "source" : "inputVar",
+    "schema" : "{xsd_parent}",
+    "schema:w3c-include-child.xsd": "{xsd_child}"
+  },
+  "expected" : {
+    "success" : true,
+    "valid" : true,
+    "error" : null,
+    "exceptionCount" : 0
+  }
+}

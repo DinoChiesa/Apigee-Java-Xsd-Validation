@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Google LLC
+// Copyright 2017-2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,14 +30,14 @@ public class TestCase {
     public String getDescription() { return _description; }
     public String getInput() { return _input; }
     public HashMap<String,Object> getProperties() { return _properties; }
-    public HashMap<String,String> getContext() { return _context; }
     public HashMap<String,Object> getExpected() { return _expected; }
+    public HashMap<String,String> getContext() { return _context; }
 
     // setters
     public void setTestName(String n) { _testName = n; }
     public void setDescription(String d) { _description = d; }
     public void setInput(String f) { _input = f; }
+    public void setProperties(HashMap<String,Object> hash) { _properties = hash; }
     public void setExpected(HashMap<String,Object> hash) { _expected = hash; }
     public void setContext(HashMap<String,String> hash) { _context = hash; }
-    public void setProperties(HashMap<String,Object> hash) { _properties = hash; }
 }

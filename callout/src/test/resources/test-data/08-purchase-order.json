@@ -6,7 +6,7 @@
   "properties" : {
     "debug" : "false",
     "source" : "inputVar",
-    "xsd" : "{myxsd}"
+    "schema" : "{myxsd}"
   },
   "expected" : {
     "success" : true,

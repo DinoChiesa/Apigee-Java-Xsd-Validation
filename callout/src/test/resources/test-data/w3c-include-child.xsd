@@ -1,0 +1,9 @@
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:ex="http://www.w3.org/2002/ws/databinding/examples/6/09/"
+    targetNamespace="http://www.w3.org/2002/ws/databinding/examples/6/09/"
+    elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+   <xs:element name="element1" type="xs:string"/>
+
+</xs:schema>

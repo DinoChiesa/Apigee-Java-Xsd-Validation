@@ -3,8 +3,8 @@
     "myxsd" : "this-is0not-valid-xsd"
   },
   "properties" : {
-    "debug" : "false",
-    "xsd" : "{myxsd}"
+    "debug" : "true",
+    "schema" : "{myxsd}"
   },
   "expected" : {
     "success" : false,

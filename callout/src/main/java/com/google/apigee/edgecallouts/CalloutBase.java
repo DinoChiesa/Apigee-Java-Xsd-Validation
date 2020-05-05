@@ -16,9 +16,14 @@
 package com.google.apigee.edgecallouts;
 
 import com.apigee.flow.message.MessageContext;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,17 +31,35 @@ import java.util.regex.Pattern;
 public abstract class CalloutBase {
     protected final static String variableReferencePatternString = "(.*?)\\{([^\\{\\} ]+?)\\}(.*?)";
     protected final static Pattern variableReferencePattern = Pattern.compile(variableReferencePatternString);
-    protected Map<String,String> properties; // read-only
+    private static final String commonError = "^(.+?)[:;] (.+)$";
+    private static final Pattern commonErrorPattern = Pattern.compile(commonError);
+
+    protected Map<String,Object> properties; // read-only
+    protected List<String> multivaluedProperties = Arrays.asList(new String[]{ "" });
+
     public CalloutBase(Map properties) {
         // convert the untyped Map to a generic map
-        Map<String,String> m = new HashMap<String,String>();
+        Map<String,Object> m = new HashMap<String,Object>();
         Iterator iterator = properties.keySet().iterator();
         while(iterator.hasNext()){
-            Object key = iterator.next();
-            Object value = properties.get(key);
-            if ((key instanceof String) && (value instanceof String)) {
-                m.put((String) key, (String) value);
+          String key = (String) iterator.next();
+          Object value = properties.get(key);
+          if (multivaluedProperties.contains(key)) {
+            if (m.containsKey(key)) {
+                ((List)(m.get(key))).add(value);
             }
+            else if (value instanceof List) {
+              m.put(key,value);
+            }
+            else {
+              List<String> newList = new ArrayList<String>();
+              newList.add(value.toString());
+              m.put(key,newList);
+            }
+          }
+          else {
+              m.put((String) key, value.toString());
+          }
         }
         this.properties = Collections.unmodifiableMap(m);
     }
@@ -115,4 +138,22 @@ public abstract class CalloutBase {
         return (sb.length() > 0) ? sb.toString() : null;
     }
 
+    protected static String getStackTraceAsString(Throwable t) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        t.printStackTrace(pw);
+        return sw.toString();
+    }
+
+    protected void setExceptionVariables(Exception exc1, MessageContext msgCtxt) {
+        String error = exc1.toString().replaceAll("\n"," ");
+        msgCtxt.setVariable(varName("exception"), error);
+        Matcher matcher = commonErrorPattern.matcher(error);
+        if (matcher.matches()) {
+            msgCtxt.setVariable(varName("error"), matcher.group(2));
+        }
+        else {
+            msgCtxt.setVariable(varName("error"), error);
+        }
+    }
 }

@@ -4,7 +4,7 @@
   },
   "properties" : {
     "debug" : "false",
-    "xsd" : "{myxsd}"
+    "schema" : "{myxsd}"
   },
   "expected" : {
     "success" : "false",

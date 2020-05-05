@@ -1,30 +1,36 @@
 # Java callout for XSD Validation
 
-This directory contains the Java source code required to compile a Java
-callout for Apigee Edge that does Validation of an XML document against an XSD. There's a built-in policy that
-does this; this callout is different in that it is a bit more flexible.
+This directory contains the Java source code required to compile a Java callout
+for Apigee Edge that does Validation of an XML document against an XSD. There's
+a built-in policy that does this; this callout is different in that it is a bit
+more flexible, in these ways:
 
 * The person configuring the policy can specify the XSD sheet in a context variable.
-  This is nice because it means the XSD can be dynamically determined or loaded at runtime.
-* It is possible to specify an XSD source available at an HTTP endpoint
-* The error messages that get emitted are more verbose and informative. This helps people diagnose runtime problems.
+  This is nice because it means the XSD can be dynamically determined or loaded
+  at runtime.
+
+* It is possible to specify an XSD source available at an external HTTP endpoint
+
+* You can use a schema that uses xs:include or xs:import of other schema
+
+* The error messages that get emitted are more verbose and informative. This
+  helps people diagnose runtime problems.
 
 
 ## Disclaimer
 
 This example is not an official Google product, nor is it part of an official Google product.
 
-
 ## Using this policy
 
 You do not need to build the source code in order to use the policy in Apigee
-Edge.  All you need is the built JAR, and the appropriate configuration for
+Edge. All you need is the built JAR, and the appropriate configuration for
 the policy.  If you want to build it, feel free.  The instructions are at the
 bottom of this readme.
 
 
-1. copy the jar file, available in target/edge-custom-xsd-validation-1.0.8.jar , if you have built
-   the jar, or in [the repo](bundle/apiproxy/resources/java/edge-custom-xsd-validation-1.0.8.jar)
+1. copy the jar file, available in target/apigee-custom-xsd-validation-20200505.jar , if you have built
+   the jar, or in [the repo](bundle/apiproxy/resources/java/apigee-custom-xsd-validation-20200505.jar)
    if you have not, to your apiproxy/resources/java directory. Also copy all the required
    dependencies. (See below) You can do this offline, or using the graphical Proxy Editor in the
    Apigee Edge Admin Portal.
@@ -35,21 +41,20 @@ bottom of this readme.
    ```xml
     <JavaCallout name='Java-Xsd'>
       <Properties>
-        <Property name='xsd'>file://xsd-name-here.xsd</Property>
+        <Property name='schema'>....</Property>
            ....
       </Properties>
       <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-      <ResourceURL>java://edge-custom-xsd-validation-1.0.8.jar</ResourceURL>
+      <ResourceURL>java://apigee-custom-xsd-validation-20200505.jar</ResourceURL>
     </JavaCallout>
    ```
 
 5. use the Edge UI, or a command-line tool like
-   [importAndDeploy.js](https://github.com/DinoChiesa/apigee-edge-js/blob/master/examples/importAndDeploy.js)
+   [importAndDeploy.js](https://github.com/DinoChiesa/apigee-edge-js-examples/blob/master/importAndDeploy.js)
    or Powershell's [Import-EdgeApi](https://github.com/DinoChiesa/Edge-Powershell-Admin/blob/develop/PSApigeeEdge/Public/Import-EdgeApi.ps1)
    or similar to import the proxy into an Edge organization. If you need to, make sure to deploy the proxy.
 
 6. use a client (like curl, or Postman, or Powershell's Invoke-WebRequest) to generate and send http requests to tickle the proxy.
-
 
 
 ## Notes
@@ -61,7 +66,8 @@ You must configure the callout with Property elements in the policy configuratio
 
 | property name        | description        |
 ---------------------- | ------------------ |
-| xsd                  |  required. the XSD or set of XSDs to use for validation |
+| schema               |  required. the main XSD to use for validation. |
+| schema:xxxx          |  optional. any dependent schema. Replace xxxx with the value of the schemaLocation in the main XSD. |
 | source               |  optional. the string or message to use to obtain the XML to validate. Defaults to "message.content" |
 | use-dom-source       |  optional. true/false. Default: false. When this is false, the callout cannot emit the path of the failing XML element, but it uses less memory at runtime. I recommend you set this as true during development, and consider setting it to true in production. |
 
@@ -76,11 +82,11 @@ To use this callout, you will need an API Proxy, of course.
 ```xml
 <JavaCallout name='JavaCallout-XSD-1'>
   <Properties>
-     <Property name='xsd'>{xsdurl}</Property>
+     <Property name='schema'>{xsdurl}</Property>
      <Property name='source'>request</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://edge-custom-xsd-validation-1.0.8.jar</ResourceURL>
+  <ResourceURL>java://apigee-custom-xsd-validation-20200505.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -125,16 +131,23 @@ Specify them in the xsd property, separated by commas, like this:
 ```xml
 <JavaCallout name='JavaCallout-XSD-2'>
   <Properties>
-     <Property name='xsd'>{xsdurl1},{xsdurl2},https://foo/bar/bam/schemaurl.xsd</Property>
+     <Property name='schema'>{xsdurl1}</Property>
+     <Property name='schema:child-schema1.xsd'>{childxsdurl1}</Property>
+     <Property name='schema:child-schema2.xsd'>https://foo/bar/bam/schemaurl2.xsd</Property>
      <Property name='source'>request</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://edge-custom-xsd-validation-1.0.8.jar</ResourceURL>
+  <ResourceURL>java://apigee-custom-xsd-validation-20200505.jar</ResourceURL>
 </JavaCallout>
 ```
 
-The order in which these are specified is important.
-If A imports B, then you MUST specify B before A in the comma-separated list.
+The `schema` property defines the main XSD.  This XSD imports or includes two
+other schema, both of which use a `schemaLocation` attribute. The property
+`schema:child-schema1.xsd` specifies a curly-braced variable which at runtime
+will hold the URL that returns the schema noted in the main XSD with
+`schemaLocation` of `child-schema1.xsd`. The property `schema:child-schema2.xsd`
+specifies a hard-coded URL that will return the schema noted with
+`schemaLocation` of `child-schema2.xsd`.
 
 The source property specifies where to find the XML to be validated. This must be a variable name.
 Do not use curly-braces. If this variable resolves to a Message type (such as request or response,
@@ -171,12 +184,12 @@ To get the failing element, set the `use-dom-source` property to "true":
 ```xml
 <JavaCallout name='JavaCallout-XSD-3'>
   <Properties>
-     <Property name='xsd'>{xsdurl1},{xsdurl2},https://foo/bar/bam/schemaurl.xsd</Property>
+     <Property name='schema'>{xsdurl1},{xsdurl2},https://foo/bar/bam/schemaurl.xsd</Property>
      <Property name='source'>request</Property>
      <Property name='use-dom-source'>true</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://edge-custom-xsd-validation-1.0.8.jar</ResourceURL>
+  <ResourceURL>java://apigee-custom-xsd-validation-20200505.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -293,15 +306,17 @@ Building from source requires Java 1.8, and Maven.
 Pull requests are welcomed!
 
 
-## Build Dependencies
+## Runtime Dependencies
 
-- Google Guava v25.1-jre and its dependencies
-
+This callout depends on Google Guava v25.1-jre or later.  While
+that JAR is not documented as being part of the Apigee SaaS, in practice the
+Guava JAR is available at runtime, so there is no need to include it in your API
+proxy.  All you need to include is the base JAR from this repo.
 
 
 ## License
 
-This material is Copyright 2017-2019, Google LLC.
+This material is Copyright 2017-2020, Google LLC.
 and is licensed under the [Apache 2.0 License](LICENSE). This includes the Java code as well as the API Proxy configuration.
 
 
@@ -315,6 +330,7 @@ guarantee for responses to inquiries regarding this callout.
 
 ## Bugs
 
-* The tests are incomplete. For example, there are no tests involving schema that include other schema.
-* Instances of the SchemaFactory are not pooled. Doing so might improve perf at load.
+* Instances of the SchemaFactory are not pooled. Doing so might improve perf at
+  load.
 
+* The tests retrieve XSD from the w3c site, which causes them to be slow.

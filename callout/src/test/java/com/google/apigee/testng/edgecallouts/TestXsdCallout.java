@@ -186,7 +186,7 @@ public class TestXsdCallout {
             String key = entry.getKey();
             String value = entry.getValue();
             if (value.startsWith("file://")) {
-                value = resolveFileReference(value);
+              value = resolveFileReference(value);
             }
             messageContext.setVariable(key, value);
         }
@@ -260,8 +260,6 @@ public class TestXsdCallout {
                     }
                 }
             }
-
-
         }
         else {
             String observedError = messageContext.getVariable("xsd_error");

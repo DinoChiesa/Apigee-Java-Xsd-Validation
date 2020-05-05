@@ -4,8 +4,8 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.google.apigee.callout</groupId>
-  <artifactId>edge-custom-xsd-validation</artifactId>
-  <version>1.0.8</version>
+  <artifactId>apigee-custom-xsd-validation</artifactId>
+  <version>20200505</version>
   <name>EdgeCustomXsdValidation</name>
   <url>http://maven.apache.org</url>
   <packaging>jar</packaging>
@@ -16,7 +16,7 @@
     <testng.version>6.8.7</testng.version> <!-- current: 6.9.4 -->
     <guava.version>25.1-jre</guava.version>
     <jmockit.version>1.7</jmockit.version>
-    <jackson.version>2.9.8</jackson.version>
+    <jackson.version>[2.9.10,]</jackson.version>
     <apiproxy.java.rsrc.dir>../bundle/apiproxy/resources/java</apiproxy.java.rsrc.dir>
   </properties>
 
@@ -27,6 +27,7 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>${guava.version}</version>
+      <scope>provided</scope>
     </dependency>
 
     <!--
@@ -162,6 +163,7 @@ mvn install:install-file \
                     <include name="lib/*.jar"/>
                     <exclude name="lib/message-flow-1.0.0.jar"/>
                     <exclude name="lib/expressions-1.0.0.jar"/>
+                    <exclude name="lib/guava-*.jar"/>
                   </fileset>
                   <mapper type="flatten"/>
                 </copy>

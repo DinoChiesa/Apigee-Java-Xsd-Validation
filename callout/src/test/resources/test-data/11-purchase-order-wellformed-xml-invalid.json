@@ -7,7 +7,7 @@
     "debug" : "false",
     "use-dom-source" : "true",
     "source" : "inputVar",
-    "xsd" : "{myxsd}"
+    "schema" : "{myxsd}"
   },
   "expected" : {
     "success" : true,

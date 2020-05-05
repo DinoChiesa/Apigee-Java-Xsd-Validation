@@ -1,0 +1,4 @@
+<echoInclude
+    xmlns="http://www.w3.org/2002/ws/databinding/examples/6/09/">
+  <element1>hi there</element1>
+</echoInclude>

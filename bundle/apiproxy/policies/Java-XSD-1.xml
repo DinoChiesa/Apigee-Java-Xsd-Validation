@@ -1,8 +1,8 @@
 <JavaCallout name='Java-XSD-1'>
   <Properties>
-     <Property name='xsd'>{myxsd}</Property>
+     <Property name='schema'>{myxsd}</Property>
      <Property name='source'>request</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://edge-custom-xsd-validation-1.0.8.jar</ResourceURL>
+  <ResourceURL>java://edge-custom-xsd-validation-20200505.jar</ResourceURL>
 </JavaCallout>
