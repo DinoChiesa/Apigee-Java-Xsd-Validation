@@ -1,4 +1,4 @@
-package com.google.apigee.edgecallouts.xsdvalidation;
+package com.google.apigee.callouts.xsdvalidation;
 
 public class Pair<L, R> {
   public final L left;

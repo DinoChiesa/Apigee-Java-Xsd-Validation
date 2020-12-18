@@ -1,9 +1,11 @@
 {
   "context" : {
+    "inputVar" : "file://purchase-order.xml",
     "myxsd" : "file://ReOrderNodes.xsl"
   },
   "properties" : {
     "debug" : true,
+    "source" : "inputVar",
     "schema" : "{myxsd}"
   },
   "expected" : {

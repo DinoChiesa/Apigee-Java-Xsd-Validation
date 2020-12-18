@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.google.apigee.testng.edgecallouts;
+package com.google.apigee.callouts.xsdvalidation;
 
 import java.util.HashMap;
 

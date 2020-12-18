@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.google.apigee.edgecallouts.xsdvalidation;
+package com.google.apigee.callouts.xsdvalidation;
 
 import com.apigee.flow.message.MessageContext;
 import java.util.ArrayList;

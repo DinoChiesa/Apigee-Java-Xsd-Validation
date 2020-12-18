@@ -1,0 +1,8 @@
+<!--
+     Even though this document does not begin with the purchaseOrder element, it
+     will be valid according to the schema, because comment is a toplevel
+     element also. There is no way to specify, when validating with XSD, that
+     the root element be a particular element. If applications want to check
+     that, they  must perform that check as a second step.
+-->
+<comment xmlns="http://tempuri.org/po.xsd">Hurry, my lawn is going wild!</comment>

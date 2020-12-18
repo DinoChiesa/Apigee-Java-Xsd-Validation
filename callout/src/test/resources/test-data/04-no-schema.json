@@ -1,8 +1,10 @@
 {
   "context" : {
+    "inputVar" : "file://purchase-order.xml",
     "myxsd" : ""
   },
   "properties" : {
+    "source" : "inputVar",
     "debug" : false
   },
   "expected" : {

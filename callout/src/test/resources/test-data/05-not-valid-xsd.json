@@ -1,9 +1,11 @@
 {
   "context" : {
-    "myxsd" : "this-is0not-valid-xsd"
+    "myxsd" : "this-is0not-valid-xsd",
+    "inputVar" : "file://purchase-order.xml"
   },
   "properties" : {
     "debug" : "true",
+    "source" : "inputVar",
     "schema" : "{myxsd}"
   },
   "expected" : {

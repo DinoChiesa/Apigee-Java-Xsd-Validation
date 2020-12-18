@@ -34,12 +34,12 @@
 //     <Property name='source'>name-of-variable-containing-XML-doc</Property>
 //
 //   </Properties>
-//   <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-//   <ResourceURL>java://edge-custom-xsd-validation-1.0.4.jar</ResourceURL>
+//   <ClassName>com.google.apigee.callouts.xsdvalidation.XsdValidatorCallout</ClassName>
+//   <ResourceURL>java://edge-custom-xsd-validation-20201218.jar</ResourceURL>
 // </JavaCallout>
 //
 
-package com.google.apigee.edgecallouts.xsdvalidation;
+package com.google.apigee.callouts.xsdvalidation;
 
 import com.apigee.flow.execution.ExecutionContext;
 import com.apigee.flow.execution.ExecutionResult;
@@ -47,7 +47,7 @@ import com.apigee.flow.execution.IOIntensive;
 import com.apigee.flow.execution.spi.Execution;
 import com.apigee.flow.message.Message;
 import com.apigee.flow.message.MessageContext;
-import com.google.apigee.edgecallouts.CalloutBase;
+import com.google.apigee.callouts.CalloutBase;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -77,6 +77,7 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -170,13 +171,18 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
     return (sourceProp == null || sourceProp.equals("")) ? "message" : sourceProp;
   }
 
+  private boolean wantFaultOnInvalid() {
+    String wantFault = (String) this.properties.get("throw-fault-on-invalid");
+    return (wantFault != null) && Boolean.parseBoolean(wantFault);
+  }
+
   private boolean useDomSource() {
     String wantDom = (String) this.properties.get("use-dom-source");
     boolean dom = (wantDom != null) && Boolean.parseBoolean(wantDom);
     return dom;
   }
 
-  private static DOMSource newDomSource(InputStream in)
+  private static Document getSourceDocument(InputStream in)
       throws ParserConfigurationException, SAXException, IOException {
     DocumentBuilderFactory nonThreadSafeFactory = DocumentBuilderFactory.newInstance();
     nonThreadSafeFactory.setFeature(EXTERNAL_PARAMETER_ENTITIES, false);
@@ -185,12 +191,10 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
     nonThreadSafeFactory.setNamespaceAware(true);
     DocumentBuilder builder = nonThreadSafeFactory.newDocumentBuilder();
     InputSource inputSource = new InputSource(in);
-    Document document = builder.parse(inputSource);
-    return new DOMSource(document);
+    return builder.parse(inputSource);
   }
 
-  private Source getSource(MessageContext msgCtxt)
-      throws IOException, ParserConfigurationException, SAXException {
+  private InputStream getInputStream(MessageContext msgCtxt) {
     String sourceProp = getSourceProperty();
     Object in = msgCtxt.getVariable(sourceProp);
     if (in == null) {
@@ -198,24 +202,24 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
     }
     if (in instanceof com.apigee.flow.message.Message) {
       Message msg = (Message) in;
-      if (useDomSource()) {
-        return newDomSource(msg.getContentAsStream());
-      }
-      return new StreamSource(msg.getContentAsStream());
+      return msg.getContentAsStream();
     }
-
-    // assume it resolves to an xml string
+    // Assume the source resolves to an xml string.
+    // The cast may throw if the callout is misconfigured.
     String s = (String) in;
     s = s.trim();
     if (!s.startsWith("<")) {
       throw new IllegalStateException(
           String.format("source '%s' does not appear to be XML", sourceProp));
     }
-    InputStream s2 = new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
-    if (useDomSource()) {
-      return newDomSource(s2);
-    }
-    return new StreamSource(s2);
+    return new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private Source getSource(MessageContext msgCtxt)
+    throws IOException, ParserConfigurationException, SAXException {
+    InputStream in = getInputStream(msgCtxt);
+    return (useDomSource()) ?
+      new DOMSource(getSourceDocument(in)) : new StreamSource(in);
   }
 
   private String resolveOneXsd(String xsd, MessageContext msgCtxt)
@@ -231,10 +235,26 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
     return (xsd.startsWith("<")) ? xsd : maybeResolveUrlReference(xsd);
   }
 
+  protected void verifyRequiredRoot(String expectedName, String expectedNsuri, Document doc) {
+    Element elt = (Element) doc.getDocumentElement();
+    boolean invalid = false;
+    if (!expectedName.equals(elt.getLocalName())) {
+      invalid = true;
+    }
+    else if ((expectedNsuri == null || expectedNsuri.equals("")) && !(elt.getNamespaceURI() == null || elt.getNamespaceURI().equals(""))) {
+      invalid = true;
+    }
+    else if (expectedNsuri != null && (elt.getNamespaceURI() == null || !elt.getNamespaceURI().equals(expectedNsuri))) {
+      invalid = true;
+    }
+    if (invalid) {
+      throw new IllegalStateException("unacceptable root element");
+    }
+  }
+
   private Pair<StreamSource, Map<String, String>> getSchema(MessageContext msgCtxt)
       throws Exception {
     // the schema order is unimportant.
-
     String mainXsd = (String) this.properties.get("schema");
     if (mainXsd == null || mainXsd.equals("")) {
       throw new IllegalStateException("configuration error: no xsd property");
@@ -265,10 +285,11 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
     }
 
     StreamSource streamSource = new StreamSource(new StringReader(resolveOneXsd(mainXsd, msgCtxt)));
-    if (splits.get("sources") != null){
-      return Pair.of(streamSource,
-                     splits.get("sources").stream()
-                     .collect(Collectors.toMap(x -> x.left, x -> (String) x.right)));
+    if (splits.get("sources") != null) {
+      return Pair.of(
+          streamSource,
+          splits.get("sources").stream()
+              .collect(Collectors.toMap(x -> x.left, x -> (String) x.right)));
     }
     return Pair.of(streamSource, null);
   }
@@ -295,12 +316,22 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
     return ref;
   }
 
+  protected Pair<String,String> getRequiredRoot(MessageContext msgCtxt) throws Exception {
+    String requiredRoot = getSimpleOptionalProperty("required-root", msgCtxt);
+    if (requiredRoot == null) {
+      return null;
+    }
+    String requiredRootNs = getSimpleOptionalProperty("required-root-namespace", msgCtxt);
+    return Pair.of(requiredRoot, requiredRootNs);
+  }
+
   public ExecutionResult execute(MessageContext msgCtxt, ExecutionContext exeCtxt) {
     ExecutionResult calloutResult = ExecutionResult.ABORT;
     CustomValidationErrorHandler errorHandler = null;
     boolean debug = getDebug();
     Validator validator = null;
     try {
+      Source source = getSource(msgCtxt);
       SchemaFactory notThreadSafeFactory =
           SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 
@@ -308,23 +339,31 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
       Pair<StreamSource, Map<String, String>> schemaConfig = getSchema(msgCtxt);
       // if no dependent schema then use the default resolver
       if (schemaConfig.right != null) {
-        notThreadSafeFactory.setResourceResolver(new CustomResourceResolver(schemaConfig.right,
-                                                                            ref -> urlResourceCache.getUnchecked(ref)));
+        notThreadSafeFactory.setResourceResolver(
+            new CustomResourceResolver(
+                schemaConfig.right, ref -> urlResourceCache.getUnchecked(ref)));
       }
 
       Schema schema = notThreadSafeFactory.newSchema(schemaConfig.left);
       validator = schema.newValidator();
       errorHandler = new CustomValidationErrorHandler(msgCtxt, validator, debug);
       validator.setErrorHandler(errorHandler);
-      Source source = getSource(msgCtxt);
       validator.validate(source);
+
       msgCtxt.setVariable(varName("valid"), errorHandler.isValid());
-      calloutResult = ExecutionResult.SUCCESS;
+
+      Pair<String,String> requiredRoot = getRequiredRoot(msgCtxt);
+      if (requiredRoot != null) {
+        verifyRequiredRoot(requiredRoot.left, requiredRoot.right, getSourceDocument(getInputStream(msgCtxt)));
+      }
+
+      calloutResult = (errorHandler.isValid() || !wantFaultOnInvalid()) ? ExecutionResult.SUCCESS : ExecutionResult.ABORT;
+
     } catch (Exception ex) {
       msgCtxt.setVariable(varName("valid"), false);
       if (debug) {
         String stacktrace = Throwables.getStackTraceAsString(ex);
-         System.out.println(stacktrace);  // to MP stdout
+        System.out.println(stacktrace); // to MP stdout
         msgCtxt.setVariable(varName("stacktrace"), stacktrace);
       }
       String error = ex.toString();

@@ -2,7 +2,9 @@
   <Properties>
      <Property name='schema'>{myxsd}</Property>
      <Property name='source'>request</Property>
+     <Property name='required-root'>purchaseOrder</Property>
+     <Property name='required-root-namespace'>http://tempuri.org/po.xsd</Property>
   </Properties>
-  <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://edge-custom-xsd-validation-20200505.jar</ResourceURL>
+  <ClassName>com.google.apigee.callouts.xsdvalidation.XsdValidatorCallout</ClassName>
+  <ResourceURL>java://edge-custom-xsd-validation-20201218.jar</ResourceURL>
 </JavaCallout>

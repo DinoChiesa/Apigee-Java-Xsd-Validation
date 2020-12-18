@@ -5,8 +5,8 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.google.apigee.callout</groupId>
   <artifactId>apigee-custom-xsd-validation</artifactId>
-  <version>20200505</version>
-  <name>EdgeCustomXsdValidation</name>
+  <version>20201218</version>
+  <name>ApigeeCustomXsdValidation</name>
   <url>http://maven.apache.org</url>
   <packaging>jar</packaging>
   <properties>

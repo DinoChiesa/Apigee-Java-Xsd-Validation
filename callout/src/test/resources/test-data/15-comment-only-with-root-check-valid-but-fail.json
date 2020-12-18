@@ -1,0 +1,18 @@
+{
+  "context" : {
+    "myxsd" : "file://schema-for-purchase-order.xsd",
+    "inputVar" : "file://comment-only.xml"
+  },
+  "properties" : {
+    "debug" : "false",
+    "required-root" : "purchaseOrder",
+    "required-root-namespace" : "http://tempuri.org/po.xsd",
+    "source" : "inputVar",
+    "schema" : "{myxsd}"
+  },
+  "expected" : {
+    "success" : false,
+    "valid" : true,
+    "error" : "unacceptable root element"
+  }
+}

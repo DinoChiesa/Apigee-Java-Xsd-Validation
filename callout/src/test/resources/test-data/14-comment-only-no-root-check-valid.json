@@ -1,0 +1,16 @@
+{
+  "context" : {
+    "myxsd" : "file://schema-for-purchase-order.xsd",
+    "inputVar" : "file://comment-only.xml"
+  },
+  "properties" : {
+    "debug" : "false",
+    "use-dom-source" : "true",
+    "source" : "inputVar",
+    "schema" : "{myxsd}"
+  },
+  "expected" : {
+    "success" : true,
+    "valid" : true
+  }
+}

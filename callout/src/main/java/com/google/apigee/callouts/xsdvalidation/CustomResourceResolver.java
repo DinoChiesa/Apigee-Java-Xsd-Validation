@@ -1,4 +1,4 @@
-package com.google.apigee.edgecallouts.xsdvalidation;
+package com.google.apigee.callouts.xsdvalidation;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

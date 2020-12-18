@@ -1,20 +1,22 @@
 # Java callout for XSD Validation
 
 This directory contains the Java source code required to compile a Java callout
-for Apigee Edge that does Validation of an XML document against an XSD. There's
+for Apigee that does Validation of an XML document against an XSD. There's
 a built-in policy that does this; this callout is different in that it is a bit
 more flexible, in these ways:
 
-* The person configuring the policy can specify the XSD sheet in a context variable.
+* The person configuring the policy can specify the XSD in a context variable.
   This is nice because it means the XSD can be dynamically determined or loaded
   at runtime.
 
-* It is possible to specify an XSD source available at an external HTTP endpoint
+* It is possible to specify an XSD source available at an external HTTP endpoint.
 
-* You can use a schema that uses xs:include or xs:import of other schema
+* You can use a schema that uses xs:include or xs:import of other schema.
+
+* You can configure the policy to require a particular root element.
 
 * The error messages that get emitted are more verbose and informative. This
-  helps people diagnose runtime problems.
+  helps people diagnose runtime problems, or provide feedback to API callers.
 
 
 ## Disclaimer
@@ -29,8 +31,8 @@ the policy.  If you want to build it, feel free.  The instructions are at the
 bottom of this readme.
 
 
-1. copy the jar file, available in target/apigee-custom-xsd-validation-20200505.jar , if you have built
-   the jar, or in [the repo](bundle/apiproxy/resources/java/apigee-custom-xsd-validation-20200505.jar)
+1. copy the jar file, available in target/apigee-custom-xsd-validation-20201218.jar , if you have built
+   the jar, or in [the repo](bundle/apiproxy/resources/java/apigee-custom-xsd-validation-20201218.jar)
    if you have not, to your apiproxy/resources/java directory. Also copy all the required
    dependencies. (See below) You can do this offline, or using the graphical Proxy Editor in the
    Apigee Edge Admin Portal.
@@ -44,8 +46,8 @@ bottom of this readme.
         <Property name='schema'>....</Property>
            ....
       </Properties>
-      <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-      <ResourceURL>java://apigee-custom-xsd-validation-20200505.jar</ResourceURL>
+      <ClassName>com.google.apigee.callouts.xsdvalidation.XsdValidatorCallout</ClassName>
+      <ResourceURL>java://apigee-custom-xsd-validation-20201218.jar</ResourceURL>
     </JavaCallout>
    ```
 
@@ -59,7 +61,7 @@ bottom of this readme.
 
 ## Notes
 
-There is one callout class, com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout,
+There is one callout class, com.google.apigee.callouts.xsdvalidation.XsdValidatorCallout,
 which performs the XSD validation.
 
 You must configure the callout with Property elements in the policy configuration.
@@ -70,7 +72,8 @@ You must configure the callout with Property elements in the policy configuratio
 | schema:xxxx          |  optional. any dependent schema. Replace xxxx with the value of the schemaLocation in the main XSD. |
 | source               |  optional. the string or message to use to obtain the XML to validate. Defaults to "message.content" |
 | use-dom-source       |  optional. true/false. Default: false. When this is false, the callout cannot emit the path of the failing XML element, but it uses less memory at runtime. I recommend you set this as true during development, and consider setting it to true in production. |
-
+| required-root        |  optional. The localname of the root element that you'd like to require. Simply validating with XSD, does not check that the root element is a particular element.  This property allows you to tell the callout to perform that extra check.  |
+| required-root-namepsace |  optional, but required if `required-root` is present. The namespace URI of the root element that you'd like to require. |
 
 
 Examples follow.
@@ -85,8 +88,8 @@ To use this callout, you will need an API Proxy, of course.
      <Property name='schema'>{xsdurl}</Property>
      <Property name='source'>request</Property>
   </Properties>
-  <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://apigee-custom-xsd-validation-20200505.jar</ResourceURL>
+  <ClassName>com.google.apigee.callouts.xsdvalidation.XsdValidatorCallout</ClassName>
+  <ResourceURL>java://apigee-custom-xsd-validation-20201218.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -111,9 +114,9 @@ meta-inf/manifest.mf
 com/
 com/google/
 com/google/apigee/
-com/google/apigee/edgecallouts/
-com/google/apigee/edgecallouts/xsdvalidation
-com/google/apigee/edgecallouts/xsdvalidation/XsdValidatorCallout.class
+com/google/apigee/callouts/
+com/google/apigee/callouts/xsdvalidation
+com/google/apigee/callouts/xsdvalidation/XsdValidatorCallout.class
 resources/
 resources/filename.xsd
 ```
@@ -136,8 +139,8 @@ Specify them in the xsd property, separated by commas, like this:
      <Property name='schema:child-schema2.xsd'>https://foo/bar/bam/schemaurl2.xsd</Property>
      <Property name='source'>request</Property>
   </Properties>
-  <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://apigee-custom-xsd-validation-20200505.jar</ResourceURL>
+  <ClassName>com.google.apigee.callouts.xsdvalidation.XsdValidatorCallout</ClassName>
+  <ResourceURL>java://apigee-custom-xsd-validation-20201218.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -188,8 +191,8 @@ To get the failing element, set the `use-dom-source` property to "true":
      <Property name='source'>request</Property>
      <Property name='use-dom-source'>true</Property>
   </Properties>
-  <ClassName>com.google.apigee.edgecallouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://apigee-custom-xsd-validation-20200505.jar</ResourceURL>
+  <ClassName>com.google.apigee.callouts.xsdvalidation.XsdValidatorCallout</ClassName>
+  <ResourceURL>java://apigee-custom-xsd-validation-20201218.jar</ResourceURL>
 </JavaCallout>
 ```
 
