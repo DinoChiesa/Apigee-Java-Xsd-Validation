@@ -139,13 +139,7 @@ public class TestXsdCallout {
       }
     }
 
-    // OMG!!  Seriously? Is this the easiest way to generate a 2-d array?
-    int n = list.size();
-    Object[][] data = new Object[n][];
-    for (int i = 0; i < data.length; i++) {
-      data[i] = new Object[] {list.get(i)};
-    }
-    return data;
+    return list.stream().map(tc -> new TestCase[] {tc}).toArray(Object[][]::new);
   }
 
   @Test
