@@ -6,5 +6,5 @@
      <Property name='required-root-namespace'>http://tempuri.org/po.xsd</Property>
   </Properties>
   <ClassName>com.google.apigee.callouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://edge-custom-xsd-validation-20201218.jar</ResourceURL>
+  <ResourceURL>java://apigee-custom-xsd-validation-20211021.jar</ResourceURL>
 </JavaCallout>

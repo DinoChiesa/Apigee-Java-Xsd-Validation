@@ -31,8 +31,8 @@ the policy.  If you want to build it, feel free.  The instructions are at the
 bottom of this readme.
 
 
-1. copy the jar file, available in target/apigee-custom-xsd-validation-20201218.jar , if you have built
-   the jar, or in [the repo](bundle/apiproxy/resources/java/apigee-custom-xsd-validation-20201218.jar)
+1. copy the jar file, available in target/apigee-custom-xsd-validation-20211021.jar , if you have built
+   the jar, or in [the repo](bundle/apiproxy/resources/java/apigee-custom-xsd-validation-20211021.jar)
    if you have not, to your apiproxy/resources/java directory. Also copy all the required
    dependencies. (See below) You can do this offline, or using the graphical Proxy Editor in the
    Apigee Edge Admin Portal.
@@ -47,7 +47,7 @@ bottom of this readme.
            ....
       </Properties>
       <ClassName>com.google.apigee.callouts.xsdvalidation.XsdValidatorCallout</ClassName>
-      <ResourceURL>java://apigee-custom-xsd-validation-20201218.jar</ResourceURL>
+      <ResourceURL>java://apigee-custom-xsd-validation-20211021.jar</ResourceURL>
     </JavaCallout>
    ```
 
@@ -89,7 +89,7 @@ To use this callout, you will need an API Proxy, of course.
      <Property name='source'>request</Property>
   </Properties>
   <ClassName>com.google.apigee.callouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://apigee-custom-xsd-validation-20201218.jar</ResourceURL>
+  <ResourceURL>java://apigee-custom-xsd-validation-20211021.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -140,7 +140,7 @@ Specify them in the xsd property, separated by commas, like this:
      <Property name='source'>request</Property>
   </Properties>
   <ClassName>com.google.apigee.callouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://apigee-custom-xsd-validation-20201218.jar</ResourceURL>
+  <ResourceURL>java://apigee-custom-xsd-validation-20211021.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -165,14 +165,14 @@ The policy sets these context variables as output:
 
 | variable name            | description                                                    |
 -------------------------- | -------------------------------------------------------------- |
-| xsd_valid                | result of the validation check. It will hold "true" if the document is valid against the schema; "false" if not. If the XML is not well-formed, then the value will get "false".
-| xsd_validation_exceptions| a string, containing a list of 1 or more messages, each separated by a newline, indicating what makes the document invalid. If the document his valid, this variable will be null. This could be suitable for sending back to the caller.
-| xsd_error                | set if the policy failed. This is usually the result of a configuration error. Processing an invalid document will not be a failure. The policy succeeds though the document is deemed invalid.
-| xsd_exception            | a diagnostic message indicating what caused the policy to fail at runtime. Set only if xsd_error is set.
-| xsd_failing_paths        | a list of paths to the elements in the document that caused the failure. Set only when a failure occurs and when `use-dom-source` is true. |
+| xsd\_valid                | result of the validation check. It will hold "true" if the document is valid against the schema; "false" if not. If the XML is not well-formed, then the value will get "false".
+| xsd\_validation_exceptions| a string, containing a list of 1 or more messages, each separated by a newline, indicating what makes the document invalid. If the document his valid, this variable will be null. This could be suitable for sending back to the caller.
+| xsd\_error                | set if the policy failed. This is usually the result of a configuration error. Processing an invalid document will not be a failure. The policy succeeds though the document is deemed invalid.
+| xsd\_exception            | a diagnostic message indicating what caused the policy to fail at runtime. Set only if xsd_error is set.
+| xsd\_failing\_paths        | a list of paths to the elements in the document that caused the failure. Set only when a failure occurs and when `use-dom-source` is true. |
 
 
-Here's an example of the list of messages emitted in xsd_validation_exceptions when a not-well-formed XML document is validated against a schema for "puchaseOrder":
+Here's an example of the list of messages emitted in xsd\_validation_exceptions when a not-well-formed XML document is validated against a schema for "puchaseOrder":
 
 ```
 1. org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 83; cvc-elt.1: Cannot find the declaration of element 'purchaseOrder'.
@@ -192,7 +192,7 @@ To get the failing element, set the `use-dom-source` property to "true":
      <Property name='use-dom-source'>true</Property>
   </Properties>
   <ClassName>com.google.apigee.callouts.xsdvalidation.XsdValidatorCallout</ClassName>
-  <ResourceURL>java://apigee-custom-xsd-validation-20201218.jar</ResourceURL>
+  <ResourceURL>java://apigee-custom-xsd-validation-20211021.jar</ResourceURL>
 </JavaCallout>
 ```
 

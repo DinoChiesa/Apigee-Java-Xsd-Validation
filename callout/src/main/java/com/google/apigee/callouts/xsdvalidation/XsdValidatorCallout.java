@@ -2,8 +2,7 @@
 //
 // A callout for Apigee Edge that performs a validation of an XML document against an XSD.
 //
-// Copyright (c) 2015-2016 by Dino Chiesa and Apigee Corporation.
-// Copyright (c) 2017-2020 Google LLC.
+// Copyright (c) 2017-2021 Google LLC.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,7 +34,7 @@
 //
 //   </Properties>
 //   <ClassName>com.google.apigee.callouts.xsdvalidation.XsdValidatorCallout</ClassName>
-//   <ResourceURL>java://edge-custom-xsd-validation-20201218.jar</ResourceURL>
+//   <ResourceURL>java://apigee-custom-xsd-validation-20211021.jar</ResourceURL>
 // </JavaCallout>
 //
 
@@ -47,11 +46,10 @@ import com.apigee.flow.execution.IOIntensive;
 import com.apigee.flow.execution.spi.Execution;
 import com.apigee.flow.message.Message;
 import com.apigee.flow.message.MessageContext;
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.apigee.callouts.CalloutBase;
-import com.google.common.base.Throwables;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -86,8 +84,8 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
   private static final String varPrefix = "xsd_";
   private static final String urlReferencePatternString = "^(https?://)(.+)$";
   private static final Pattern urlReferencePattern = Pattern.compile(urlReferencePatternString);
-  private LoadingCache<String, String> fileResourceCache;
-  private LoadingCache<String, String> urlResourceCache;
+  private static final LoadingCache<String, String> fileResourceCache;
+  private static final LoadingCache<String, String> urlResourceCache;
 
   private static final String EXTERNAL_GENERAL_ENTITIES =
       "http://xml.org/sax/features/external-general-entities";
@@ -96,12 +94,10 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
   private static final String LOAD_EXTERNAL_DTD =
       "http://apache.org/xml/features/nonvalidating/load-external-dtd";
 
-  public XsdValidatorCallout(Map properties) {
-    super(properties);
-
+  static {
     fileResourceCache =
-        CacheBuilder.newBuilder()
-            .concurrencyLevel(4)
+        Caffeine.newBuilder()
+            // .concurrencyLevel(4)
             .maximumSize(1048000)
             .expireAfterAccess(10, TimeUnit.MINUTES)
             .build(
@@ -127,8 +123,8 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
                 });
 
     urlResourceCache =
-        CacheBuilder.newBuilder()
-            .concurrencyLevel(4)
+        Caffeine.newBuilder()
+            // .concurrencyLevel(4)
             .maximumSize(1048000)
             .expireAfterAccess(10, TimeUnit.MINUTES)
             .build(
@@ -150,6 +146,10 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
                     return s.trim();
                   }
                 });
+  }
+
+  public XsdValidatorCallout(Map properties) {
+    super(properties);
   }
 
   private static byte[] readAllBytes(InputStream in) throws IOException {
@@ -216,10 +216,9 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
   }
 
   private Source getSource(MessageContext msgCtxt)
-    throws IOException, ParserConfigurationException, SAXException {
+      throws IOException, ParserConfigurationException, SAXException {
     InputStream in = getInputStream(msgCtxt);
-    return (useDomSource()) ?
-      new DOMSource(getSourceDocument(in)) : new StreamSource(in);
+    return (useDomSource()) ? new DOMSource(getSourceDocument(in)) : new StreamSource(in);
   }
 
   private String resolveOneXsd(String xsd, MessageContext msgCtxt)
@@ -240,11 +239,11 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
     boolean invalid = false;
     if (!expectedName.equals(elt.getLocalName())) {
       invalid = true;
-    }
-    else if ((expectedNsuri == null || expectedNsuri.equals("")) && !(elt.getNamespaceURI() == null || elt.getNamespaceURI().equals(""))) {
+    } else if ((expectedNsuri == null || expectedNsuri.equals(""))
+        && !(elt.getNamespaceURI() == null || elt.getNamespaceURI().equals(""))) {
       invalid = true;
-    }
-    else if (expectedNsuri != null && (elt.getNamespaceURI() == null || !elt.getNamespaceURI().equals(expectedNsuri))) {
+    } else if (expectedNsuri != null
+        && (elt.getNamespaceURI() == null || !elt.getNamespaceURI().equals(expectedNsuri))) {
       invalid = true;
     }
     if (invalid) {
@@ -316,7 +315,7 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
     return ref;
   }
 
-  protected Pair<String,String> getRequiredRoot(MessageContext msgCtxt) throws Exception {
+  protected Pair<String, String> getRequiredRoot(MessageContext msgCtxt) throws Exception {
     String requiredRoot = getSimpleOptionalProperty("required-root", msgCtxt);
     if (requiredRoot == null) {
       return null;
@@ -340,8 +339,7 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
       // if no dependent schema then use the default resolver
       if (schemaConfig.right != null) {
         notThreadSafeFactory.setResourceResolver(
-            new CustomResourceResolver(
-                schemaConfig.right, ref -> urlResourceCache.getUnchecked(ref)));
+            new CustomResourceResolver(schemaConfig.right, ref -> urlResourceCache.get(ref)));
       }
 
       Schema schema = notThreadSafeFactory.newSchema(schemaConfig.left);
@@ -352,23 +350,23 @@ public class XsdValidatorCallout extends CalloutBase implements Execution {
 
       msgCtxt.setVariable(varName("valid"), errorHandler.isValid());
 
-      Pair<String,String> requiredRoot = getRequiredRoot(msgCtxt);
+      Pair<String, String> requiredRoot = getRequiredRoot(msgCtxt);
       if (requiredRoot != null) {
-        verifyRequiredRoot(requiredRoot.left, requiredRoot.right, getSourceDocument(getInputStream(msgCtxt)));
+        verifyRequiredRoot(
+            requiredRoot.left, requiredRoot.right, getSourceDocument(getInputStream(msgCtxt)));
       }
 
-      calloutResult = (errorHandler.isValid() || !wantFaultOnInvalid()) ? ExecutionResult.SUCCESS : ExecutionResult.ABORT;
+      calloutResult =
+          (errorHandler.isValid() || !wantFaultOnInvalid())
+              ? ExecutionResult.SUCCESS
+              : ExecutionResult.ABORT;
 
     } catch (Exception ex) {
       msgCtxt.setVariable(varName("valid"), false);
       if (debug) {
-        String stacktrace = Throwables.getStackTraceAsString(ex);
-        System.out.println(stacktrace); // to MP stdout
-        msgCtxt.setVariable(varName("stacktrace"), stacktrace);
+        msgCtxt.setVariable(varName("stacktrace"), getStackTraceAsString(ex));
       }
-      String error = ex.toString();
-      msgCtxt.setVariable(varName("exception"), error);
-      msgCtxt.setVariable(varName("error"), error);
+      setExceptionVariables(ex, msgCtxt);
     } finally {
       if (errorHandler != null) {
         String consolidatedExceptionMessage = errorHandler.getConsolidatedExceptionMessage();
